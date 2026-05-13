@@ -2070,8 +2070,7 @@ export default function App() {
         </main>
 
         {/* Bottom Navigation */}
-        <nav className="pb-[env(safe-area-inset-bottom)] bg-white border-t border-slate-50 z-20 shadow-[0_-10px_30px_rgba(0,0,0,0.03)]">
-          <div className="h-16 flex items-center justify-between px-2 w-full">
+        <nav className="h-[calc(5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] bg-white border-t border-slate-50 flex items-center justify-between px-2 z-20 shadow-[0_-10px_30px_rgba(0,0,0,0.03)]">
           <button onClick={() => handleTabChange("history")} className={`nav-item ${activeTab === "history" ? "nav-item-active" : ""}`}>
             <History size={22} strokeWidth={2.5} />
             <span className="text-[9px] font-bold">明細</span>
@@ -2098,7 +2097,6 @@ export default function App() {
             <UserIcon size={22} strokeWidth={2.5} />
             <span className="text-[9px] font-bold">我的</span>
           </button>
-          </div>
         </nav>
       </div>
 
@@ -2434,8 +2432,8 @@ export default function App() {
                           key={key}
                           onClick={() => setEditingTransaction({ ...editingTransaction, category: key })}
                           className={`p-2 rounded-xl text-[10px] font-bold transition-all border ${editingTransaction.category === key
-                              ? "bg-app-primary text-app-accent border-app-primary shadow-lg shadow-app-primary/20"
-                              : "bg-white text-slate-400 border-slate-100 hover:border-slate-200"
+                            ? "bg-app-primary text-app-accent border-app-primary shadow-lg shadow-app-primary/20"
+                            : "bg-white text-slate-400 border-slate-100 hover:border-slate-200"
                             }`}
                         >
                           {label}
@@ -2449,8 +2447,8 @@ export default function App() {
                           key={cat.id}
                           onClick={() => setEditingTransaction({ ...editingTransaction, category: cat.id! })}
                           className={`p-2 rounded-xl text-[10px] font-bold transition-all border ${editingTransaction.category === cat.id
-                              ? "bg-app-primary text-app-accent border-app-primary shadow-lg shadow-app-primary/20"
-                              : "bg-white text-slate-400 border-slate-100 hover:border-slate-200"
+                            ? "bg-app-primary text-app-accent border-app-primary shadow-lg shadow-app-primary/20"
+                            : "bg-white text-slate-400 border-slate-100 hover:border-slate-200"
                             }`}
                         >
                           {cat.name}
@@ -2501,8 +2499,8 @@ export default function App() {
                       setEditingTransaction({ ...editingTransaction, type: nextType });
                     }}
                     className={`flex-1 py-2.5 px-4 rounded-2xl font-bold transition-all border ${editingTransaction.type === "income"
-                        ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                        : "bg-red-50 text-red-600 border-red-100"
+                      ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                      : "bg-red-50 text-red-600 border-red-100"
                       }`}
                   >
                     {editingTransaction.type === "income" ? "💰 收入" : "💸 支出"}
