@@ -4,15 +4,15 @@
  */
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { 
-  onSnapshot, 
-  collection, 
-  query, 
-  orderBy, 
-  addDoc, 
-  updateDoc, 
+import {
+  onSnapshot,
+  collection,
+  query,
+  orderBy,
+  addDoc,
+  updateDoc,
   deleteDoc,
-  doc, 
+  doc,
   getDoc,
   getDocFromServer,
   setDoc,
@@ -21,11 +21,11 @@ import {
 } from "firebase/firestore";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { motion, AnimatePresence } from "motion/react";
-import { 
-  TrendingDown, 
-  TrendingUp, 
-  History, 
-  BarChart3, 
+import {
+  TrendingDown,
+  TrendingUp,
+  History,
+  BarChart3,
   Book,
   ClipboardList,
   LogOut,
@@ -51,10 +51,10 @@ import {
   AlertCircle,
   ArrowRightLeft
 } from "lucide-react";
-import { 
-  PieChart as RePieChart, 
-  Pie, 
-  Cell, 
+import {
+  PieChart as RePieChart,
+  Pie,
+  Cell,
   ResponsiveContainer,
   Tooltip,
   LineChart as ReLineChart,
@@ -68,9 +68,9 @@ import {
 } from "recharts";
 
 import { db, auth, loginWithGoogle } from "./lib/firebase";
-import { 
-  Transaction, 
-  UserProfile, 
+import {
+  Transaction,
+  UserProfile,
   CustomCategory,
   BankAccount,
   CATEGORIES,
@@ -146,7 +146,7 @@ async function testConnection() {
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
   } catch (error) {
-    if(error instanceof Error && error.message.includes('the client is offline')) {
+    if (error instanceof Error && error.message.includes('the client is offline')) {
       console.error("Please check your Firebase configuration.");
     }
   }
@@ -186,12 +186,12 @@ const getCategoryEmoji = (category: string, customCategories: CustomCategory[] =
 const getCategoryLabel = (category: string, customCategories: CustomCategory[] = [], type?: TransactionType) => {
   const custom = customCategories.find(c => c.id === category || c.name === category);
   if (custom) return custom.name;
-  
+
   if (category === "Others" && type) {
     if (type === "expense") return EXPENSE_CATEGORIES["Others"];
     if (type === "income") return INCOME_CATEGORIES["Others"];
   }
-  
+
   return CATEGORIES[category] || category;
 };
 
@@ -199,7 +199,7 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  
+
   const getSafeDate = (ts: any) => {
     if (!ts) return new Date();
     if (typeof ts.toDate === 'function') return ts.toDate();
@@ -210,7 +210,7 @@ export default function App() {
   const recentPhrases = useMemo(() => {
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-    
+
     // Filter transactions from last year with non-empty notes
     const pastYearTransactions = transactions
       .filter(t => t.note && t.note.trim() !== "" && getSafeDate(t.timestamp) >= oneYearAgo)
@@ -219,7 +219,7 @@ export default function App() {
     // Get unique notes in order of recency
     const uniqueNotes = new Set<string>();
     const phrases: string[] = [];
-    
+
     for (const t of pastYearTransactions) {
       const note = t.note!.trim();
       if (!uniqueNotes.has(note)) {
@@ -228,7 +228,7 @@ export default function App() {
       }
       if (phrases.length >= 15) break; // Limit to top 15 for UI clarity
     }
-    
+
     return phrases;
   }, [transactions]);
 
@@ -236,9 +236,9 @@ export default function App() {
     const labels = type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
     const allIds = Object.keys(labels);
     const savedOrder = type === 'expense' ? profile?.expenseCategoryOrder : profile?.incomeCategoryOrder;
-    
+
     if (!savedOrder || savedOrder.length === 0) return allIds.map(id => [id, labels[id]]);
-    
+
     const sortedIds = [...allIds].sort((a, b) => {
       const ai = savedOrder.indexOf(a);
       const bi = savedOrder.indexOf(b);
@@ -247,7 +247,7 @@ export default function App() {
       if (bi === -1) return -1;
       return ai - bi;
     });
-    
+
     return sortedIds.map(id => [id, labels[id]]);
   }, [profile?.expenseCategoryOrder, profile?.incomeCategoryOrder]);
 
@@ -256,7 +256,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"history" | "stats" | "accounts" | "profile">("history");
   const [isTabLoading, setIsTabLoading] = useState(false);
-  const [notification, setNotification] = useState<{message: string, type: 'error' | 'success'} | null>(null);
+  const [notification, setNotification] = useState<{ message: string, type: 'error' | 'success' } | null>(null);
 
   useEffect(() => {
     if (notification) {
@@ -354,11 +354,11 @@ export default function App() {
             const dateA = getSafeDate(a.timestamp).getTime();
             const dateB = getSafeDate(b.timestamp).getTime();
             if (dateA !== dateB) return dateB - dateA;
-            
+
             const createA = a.createdAt ? getSafeDate(a.createdAt).getTime() : 0;
             const createB = b.createdAt ? getSafeDate(b.createdAt).getTime() : 0;
             if (createA !== createB) return createB - createA;
-            
+
             return (b.id || "").localeCompare(a.id || "");
           });
           setTransactions(list);
@@ -418,7 +418,7 @@ export default function App() {
 
     const entryTime = new Date();
     let finalTimestamp = Timestamp.fromDate(entryTime);
-    
+
     if (data.date) {
       const [y, m, d] = data.date.split('-').map(Number);
       // Combine selected date with current time for entry sequence preservation
@@ -504,7 +504,7 @@ export default function App() {
 
     const balanceDiff = balance - acc.balance;
     const batch = writeBatch(db);
-    
+
     try {
       batch.update(doc(db, "users", user.uid, "accounts", accountId), {
         name,
@@ -625,7 +625,7 @@ export default function App() {
     const targetCat = sameTypeCategories[newIndex];
 
     const batch = writeBatch(db);
-    
+
     // Ensure both have valid order values for swapping
     // If legacy documents don't have order, use their current index in the sorted list
     const currentOrder = currentCat.order ?? index;
@@ -641,7 +641,7 @@ export default function App() {
 
   const handleDeleteCustomCategory = async (categoryId: string) => {
     if (!user) return;
-    
+
     // 檢查是否有交易紀錄使用此分類
     const hasTransactions = transactions.some(t => t.category === categoryId);
     if (hasTransactions) {
@@ -661,7 +661,7 @@ export default function App() {
     if (!user || !profile) return;
     const allIds = Object.keys(type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES);
     const savedOrder = type === 'expense' ? profile.expenseCategoryOrder : profile.incomeCategoryOrder;
-    
+
     let currentOrder = allIds;
     if (savedOrder && savedOrder.length > 0) {
       currentOrder = [...allIds].sort((a, b) => {
@@ -701,13 +701,13 @@ export default function App() {
       order: maxOrder + 1,
       createdAt: Timestamp.now()
     };
-    
+
     const batch = writeBatch(db);
     const accRef = doc(collection(db, "users", user.uid, "accounts"));
-    
+
     try {
       batch.set(accRef, newAcc);
-      
+
       // Update total asset balance, keep cash balance independent
       batch.update(doc(db, "users", user.uid), {
         balance: profile.balance + balance,
@@ -724,7 +724,7 @@ export default function App() {
     if (!user) return;
     const index = accounts.findIndex(a => a.id === accountId);
     if (index === -1) return;
-    
+
     const newIndex = direction === 'up' ? index - 1 : index + 1;
     if (newIndex < 0 || newIndex >= accounts.length) return;
 
@@ -767,7 +767,7 @@ export default function App() {
 
     const balanceChange = type === 'withdraw' ? -amount : amount;
     const cashChange = type === 'withdraw' ? amount : -amount;
-    
+
     batch.update(accountRef, {
       balance: account.balance + balanceChange
     });
@@ -779,9 +779,9 @@ export default function App() {
 
     try {
       await batch.commit();
-      setNotification({ 
-        message: type === 'withdraw' ? `已提款 ${amount.toLocaleString()} 至現金` : `已存款 ${amount.toLocaleString()} 到帳戶`, 
-        type: 'success' 
+      setNotification({
+        message: type === 'withdraw' ? `已提款 ${amount.toLocaleString()} 至現金` : `已存款 ${amount.toLocaleString()} 到帳戶`,
+        type: 'success'
       });
       setShowCashTransfer(null);
       setCashTransferAmount("");
@@ -799,7 +799,7 @@ export default function App() {
     const batch = writeBatch(db);
     try {
       batch.delete(doc(db, "users", user.uid, "accounts", accountId));
-      
+
       // 同步扣除總資產，但不影響現金餘額，達到「不連動」
       batch.update(doc(db, "users", user.uid), {
         balance: profile.balance - acc.balance,
@@ -842,7 +842,7 @@ export default function App() {
     const groups: { [key: string]: Transaction[] } = {};
     if (!viewMonth) return groups;
     const [y, m] = viewMonth.split('-').map(Number);
-    
+
     // Transactions matches the current view month and is already sorted newest first
     const filtered = transactions.filter(t => {
       const d = getSafeDate(t.timestamp);
@@ -868,7 +868,7 @@ export default function App() {
       // Using a simple split and reduce to avoid eval()
       const tokens = expr.split(/([+-])/);
       if (tokens.length === 0) return "";
-      
+
       let total = parseInt(tokens[0]) || 0;
       for (let i = 1; i < tokens.length; i += 2) {
         const op = tokens[i];
@@ -970,10 +970,10 @@ export default function App() {
       if (!original) return;
 
       const batch = writeBatch(db);
-      
+
       // Use a local copy to track balance changes fairly
       const updatedAccounts = [...accounts.map(acc => ({ ...acc }))];
-      
+
       // 1. Revert original impact
       if (original.type === "transfer") {
         if (original.accountId) {
@@ -1093,7 +1093,7 @@ export default function App() {
   if (!user) {
     return (
       <div className="relative min-h-screen flex items-center justify-center p-4 bg-slate-50">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-white border border-slate-100 rounded-[2.5rem] p-8 max-w-md w-full text-center space-y-6 shadow-xl shadow-slate-200"
@@ -1101,9 +1101,9 @@ export default function App() {
           <div className="inline-flex p-4 rounded-full bg-app-primary/10 text-app-primary mb-2">
             <TrendingUp size={48} />
           </div>
-          <h1 className="text-3xl font-bold text-slate-800">簡單記帳</h1>
+          <h1 className="text-3xl font-bold text-slate-800">布丁帳本</h1>
           <p className="text-slate-400">
-            開始規劃您的財務生活，每一筆支出都是成長的腳印。
+            開始記錄生活點滴，每一筆支出與收入都是成長的足跡。
           </p>
           <button
             onClick={() => loginWithGoogle()}
@@ -1126,22 +1126,21 @@ export default function App() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className={`absolute top-4 left-4 right-4 z-[100] p-4 rounded-2xl shadow-xl flex items-center gap-3 ${
-                notification.type === 'error' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-              }`}
+              className={`absolute top-4 left-4 right-4 z-[100] p-4 rounded-2xl shadow-xl flex items-center gap-3 ${notification.type === 'error' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                }`}
             >
               <AlertCircle size={20} />
               <p className="text-sm font-bold">{notification.message}</p>
             </motion.div>
           )}
         </AnimatePresence>
-        
+
         {/* Header */}
         {!isTabLoading && (activeTab === "history" || activeTab === "stats") && (
           <header className="app-header">
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-2">
-                <button 
+                <button
                   onClick={() => {
                     const [y, m] = viewMonth.split('-').map(Number);
                     const d = new Date(y, m - 2, 1);
@@ -1153,15 +1152,15 @@ export default function App() {
                 </button>
 
                 <div className="relative">
-                  <div 
+                  <div
                     className="flex items-center gap-2 bg-black/10 px-3 py-1.5 rounded-full text-xs font-bold active:scale-95 transition-transform relative overflow-hidden"
                   >
                     <span>{viewMonth.split('-')[0]}</span>
                     <div className="w-px h-3 bg-black/20 mx-1" />
                     <span className="text-sm">{viewMonth.split('-')[1]}</span>
-                    <input 
+                    <input
                       ref={viewMonthRef}
-                      type="month" 
+                      type="month"
                       value={viewMonth}
                       onChange={(e) => setViewMonth(e.target.value)}
                       className="absolute inset-0 opacity-0 cursor-pointer"
@@ -1169,7 +1168,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <button 
+                <button
                   onClick={() => {
                     const [y, m] = viewMonth.split('-').map(Number);
                     const d = new Date(y, m, 1);
@@ -1182,7 +1181,7 @@ export default function App() {
               </div>
 
               {activeTab === 'history' && (
-                <button 
+                <button
                   onClick={() => {
                     const now = new Date();
                     const dStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -1201,19 +1200,19 @@ export default function App() {
 
               {activeTab === 'stats' && (
                 <div className="flex bg-black/10 p-1 rounded-xl">
-                  <button 
+                  <button
                     onClick={() => setChartType("pie")}
                     className={`p-1.5 rounded-lg transition-all ${chartType === 'pie' ? 'bg-white shadow-sm text-app-accent' : 'text-white/60 hover:text-white'}`}
                   >
                     <LucidePieChart size={16} />
                   </button>
-                  <button 
+                  <button
                     onClick={() => setChartType("line")}
                     className={`p-1.5 rounded-lg transition-all ${chartType === 'line' ? 'bg-white shadow-sm text-app-accent' : 'text-white/60 hover:text-white'}`}
                   >
                     <LucideLineChart size={16} />
                   </button>
-                  <button 
+                  <button
                     onClick={() => setChartType("bar")}
                     className={`p-1.5 rounded-lg transition-all ${chartType === 'bar' ? 'bg-white shadow-sm text-app-accent' : 'text-white/60 hover:text-white'}`}
                   >
@@ -1233,7 +1232,7 @@ export default function App() {
                   });
                   const expenseTotal = filtered.filter(t => t.type === "expense").reduce((a, b) => a + b.amount, 0);
                   const incomeTotal = filtered.filter(t => t.type === "income").reduce((a, b) => a + b.amount, 0);
-                  
+
                   return (
                     <>
                       <div>
@@ -1258,7 +1257,7 @@ export default function App() {
 
         {/* Main Content Area */}
         <main className={`flex-1 overflow-y-auto px-4 ${(activeTab === "history" || activeTab === "stats") ? "-mt-4" : ""}`}>
-          
+
           <AnimatePresence mode="wait">
             {isTabLoading ? (
               <motion.div
@@ -1281,791 +1280,791 @@ export default function App() {
                     exit={{ opacity: 0 }}
                     className="space-y-6 pt-6 pb-10"
                   >
-                {Object.entries(groupTransactionsByDate()).map(([date, items]) => (
-                  <div key={date} className="space-y-2">
-                    <div className="flex justify-between items-center px-2">
-                      <span className="text-[10px] font-bold text-slate-400">{date}</span>
-                      <div className="flex gap-4 text-[10px] font-bold text-slate-300">
-                        <span>出: {items.filter(i => i.type === "expense").reduce((a, b) => a + b.amount, 0).toLocaleString()}</span>
-                        <span>入: {items.filter(i => i.type === "income").reduce((a, b) => a + b.amount, 0).toLocaleString()}</span>
-                      </div>
-                    </div>
-                    <div className="bg-white rounded-3xl border border-slate-100 divide-y divide-slate-50 overflow-hidden shadow-sm">
-                      {items.map(t => (
-                        <div key={t.id} className="flex items-center justify-between py-2.5 px-4 active:bg-slate-50 transition-colors">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-lg">
-                              {getCategoryEmoji(t.category, customCategories)}
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm font-bold text-slate-700">
-                                  {getCategoryDisplayName(t.category, t.type)}
-                                </p>
-                                <div className="flex items-center gap-1">
-                                  {t.accountId && (() => {
-                                    const acc = accounts.find(a => a.id === t.accountId);
-                                    return (
-                                      <span 
-                                        className="text-[8px] px-1.5 py-0.5 rounded-md text-white font-bold"
-                                        style={{ backgroundColor: acc?.color || '#94a3b8' }}
-                                      >
-                                        {acc?.name || "未知"}
-                                      </span>
-                                    );
-                                  })()}
-                                </div>
-                              </div>
-                              {t.note && (
-                                <p className="text-[10px] text-slate-400 mt-0.5">{t.note}</p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <span className={`font-mono font-bold ${t.type === "income" ? "text-emerald-500" : "text-slate-800"}`}>
-                              {t.type === "income" ? "" : "-"}{t.amount.toLocaleString()}
-                            </span>
-                            <div className="flex items-center gap-1">
-                              <button onClick={() => setEditingTransaction(t)} className="p-1.5 text-slate-400 hover:text-blue-500 transition-colors">
-                                <Pencil size={14} />
-                              </button>
-                              <button onClick={() => setShowDeleteTransactionConfirm(t)} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
+                    {Object.entries(groupTransactionsByDate()).map(([date, items]) => (
+                      <div key={date} className="space-y-2">
+                        <div className="flex justify-between items-center px-2">
+                          <span className="text-[10px] font-bold text-slate-400">{date}</span>
+                          <div className="flex gap-4 text-[10px] font-bold text-slate-300">
+                            <span>出: {items.filter(i => i.type === "expense").reduce((a, b) => a + b.amount, 0).toLocaleString()}</span>
+                            <span>入: {items.filter(i => i.type === "income").reduce((a, b) => a + b.amount, 0).toLocaleString()}</span>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </motion.div>
-            )}
+                        <div className="bg-white rounded-3xl border border-slate-100 divide-y divide-slate-50 overflow-hidden shadow-sm">
+                          {items.map(t => (
+                            <div key={t.id} className="flex items-center justify-between py-2.5 px-4 active:bg-slate-50 transition-colors">
+                              <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-lg">
+                                  {getCategoryEmoji(t.category, customCategories)}
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-sm font-bold text-slate-700">
+                                      {getCategoryDisplayName(t.category, t.type)}
+                                    </p>
+                                    <div className="flex items-center gap-1">
+                                      {t.accountId && (() => {
+                                        const acc = accounts.find(a => a.id === t.accountId);
+                                        return (
+                                          <span
+                                            className="text-[8px] px-1.5 py-0.5 rounded-md text-white font-bold"
+                                            style={{ backgroundColor: acc?.color || '#94a3b8' }}
+                                          >
+                                            {acc?.name || "未知"}
+                                          </span>
+                                        );
+                                      })()}
+                                    </div>
+                                  </div>
+                                  {t.note && (
+                                    <p className="text-[10px] text-slate-400 mt-0.5">{t.note}</p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className={`font-mono font-bold ${t.type === "income" ? "text-emerald-500" : "text-slate-800"}`}>
+                                  {t.type === "income" ? "" : "-"}{t.amount.toLocaleString()}
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  <button onClick={() => setEditingTransaction(t)} className="p-1.5 text-slate-400 hover:text-blue-500 transition-colors">
+                                    <Pencil size={14} />
+                                  </button>
+                                  <button onClick={() => setShowDeleteTransactionConfirm(t)} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </motion.div>
+                )}
 
-            {activeTab === "stats" && (
-              <motion.div 
-                key="stats"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="pt-6 space-y-4 pb-10"
-              >
-                <div className="bg-white rounded-[2rem] border border-slate-100 p-5 shadow-sm">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="flex bg-slate-100 p-1 rounded-full flex-1">
-                      <button 
-                        onClick={() => setStatsTimeframe("month")}
-                        className={`flex-1 py-1 text-[9px] font-bold rounded-full transition-all ${chartType !== 'pie' ? 'opacity-0 pointer-events-none' : (statsTimeframe === "month" ? "bg-white shadow-sm text-app-accent" : "text-slate-400")}`}
-                      >月</button>
-                      <button 
-                        onClick={() => setStatsTimeframe("year")}
-                        className={`flex-1 py-1 text-[9px] font-bold rounded-full transition-all ${chartType !== 'pie' ? 'bg-white shadow-sm text-app-accent flex-1' : (statsTimeframe === "year" ? "bg-white shadow-sm text-app-accent" : "text-slate-400")}`}
-                      >年</button>
+                {activeTab === "stats" && (
+                  <motion.div
+                    key="stats"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="pt-6 space-y-4 pb-10"
+                  >
+                    <div className="bg-white rounded-[2rem] border border-slate-100 p-5 shadow-sm">
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="flex bg-slate-100 p-1 rounded-full flex-1">
+                          <button
+                            onClick={() => setStatsTimeframe("month")}
+                            className={`flex-1 py-1 text-[9px] font-bold rounded-full transition-all ${chartType !== 'pie' ? 'opacity-0 pointer-events-none' : (statsTimeframe === "month" ? "bg-white shadow-sm text-app-accent" : "text-slate-400")}`}
+                          >月</button>
+                          <button
+                            onClick={() => setStatsTimeframe("year")}
+                            className={`flex-1 py-1 text-[9px] font-bold rounded-full transition-all ${chartType !== 'pie' ? 'bg-white shadow-sm text-app-accent flex-1' : (statsTimeframe === "year" ? "bg-white shadow-sm text-app-accent" : "text-slate-400")}`}
+                          >年</button>
+                        </div>
+
+                        <div className="flex bg-slate-100 p-1 rounded-full flex-[2]">
+                          <button
+                            onClick={() => setStatsType("expense")}
+                            className={`flex-1 py-1 text-[10px] font-bold rounded-full transition-all flex items-center justify-center gap-1.5 ${statsType === "expense" ? "bg-white shadow-sm text-red-500" : "text-slate-400"}`}
+                          >
+                            支出
+                          </button>
+                          <button
+                            onClick={() => setStatsType("income")}
+                            className={`flex-1 py-1 text-[10px] font-bold rounded-full transition-all flex items-center justify-center gap-1.5 ${statsType === "income" ? "bg-white shadow-sm text-emerald-500" : "text-slate-400"}`}
+                          >
+                            收入
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className={`${chartType === 'pie' ? 'h-48' : 'h-64'} w-full relative`}>
+                        {(() => {
+                          const [y, m] = viewMonth.split('-').map(Number);
+
+                          if (chartType === 'line') {
+                            // Yearly line chart by category
+                            const yearlyTransactions = transactions.filter(t => {
+                              const tDate = getSafeDate(t.timestamp);
+                              return tDate.getFullYear() === y && t.type === statsType;
+                            });
+
+                            const categorySource = statsType === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
+                            const categories = [
+                              ...Object.entries(categorySource),
+                              ...customCategories.filter(c => c.type === statsType).map(c => [c.id || c.name, c.name])
+                            ];
+
+                            const lineData = Array.from({ length: 12 }, (_, i) => {
+                              const monthNum = i + 1;
+                              const monthData: any = { name: `${monthNum}月` };
+                              categories.forEach(([key]) => {
+                                monthData[key] = yearlyTransactions
+                                  .filter(t => t.category === key && getSafeDate(t.timestamp).getMonth() === i)
+                                  .reduce((acc, curr) => acc + curr.amount, 0);
+                              });
+                              return monthData;
+                            });
+
+                            const activeCategories = categories.filter(([key]) =>
+                              yearlyTransactions.some(t => t.category === key)
+                            );
+
+                            if (yearlyTransactions.length === 0) {
+                              return (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-300">
+                                  <LucideLineChart size={32} className="mb-2 opacity-20" />
+                                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">尚無年報資料</p>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <ResponsiveContainer width="100%" height="100%">
+                                <ReLineChart data={lineData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                  <XAxis interval={0} dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }} />
+                                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }} />
+                                  <Tooltip
+                                    content={({ active, payload }) => {
+                                      if (active && payload && payload.length) {
+                                        return (
+                                          <div className="bg-white p-3 border border-slate-100 shadow-xl rounded-2xl min-w-[120px]">
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">{payload[0].payload.name}</p>
+                                            <div className="space-y-1.5">
+                                              {payload.sort((a: any, b: any) => b.value - a.value).slice(0, 5).map((entry: any, index: number) => {
+                                                const catName = categories.find(([k]) => k === entry.dataKey)?.[1] || entry.dataKey;
+                                                return (entry.value > 0 &&
+                                                  <div key={`tip-${index}`} className="flex justify-between items-center gap-4">
+                                                    <div className="flex items-center gap-1.5">
+                                                      <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: entry.color }} />
+                                                      <span className="text-[10px] font-bold text-slate-600">{catName}</span>
+                                                    </div>
+                                                    <span className="text-[10px] font-mono font-bold text-slate-800">{Number(entry.value).toLocaleString()}</span>
+                                                  </div>
+                                                );
+                                              })}
+                                            </div>
+                                          </div>
+                                        );
+                                      }
+                                      return null;
+                                    }}
+                                  />
+                                  {activeCategories.map(([key, label], index) => {
+                                    if (hiddenChartCategories.has(key)) return null;
+                                    return (
+                                      <Line
+                                        key={key}
+                                        type="monotone"
+                                        dataKey={key}
+                                        name={label}
+                                        stroke={CHART_COLORS[index % CHART_COLORS.length]}
+                                        strokeWidth={2}
+                                        dot={false}
+                                        activeDot={{ r: 4, strokeWidth: 0 }}
+                                      />
+                                    );
+                                  })}
+                                </ReLineChart>
+                              </ResponsiveContainer>
+                            );
+                          }
+
+                          if (chartType === 'bar') {
+                            // Yearly bar chart: monthly totals
+                            const yearlyTransactions = transactions.filter(t => {
+                              const tDate = getSafeDate(t.timestamp);
+                              return tDate.getFullYear() === y && t.type === statsType;
+                            });
+
+                            const barData = Array.from({ length: 12 }, (_, i) => {
+                              const monthNum = i + 1;
+                              return {
+                                name: `${monthNum}月`,
+                                amount: yearlyTransactions
+                                  .filter(t => getSafeDate(t.timestamp).getMonth() === i)
+                                  .reduce((acc, curr) => acc + curr.amount, 0)
+                              };
+                            });
+
+                            if (yearlyTransactions.length === 0) {
+                              return (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-300">
+                                  <LucideBarChart size={32} className="mb-2 opacity-20" />
+                                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">尚無年報資料</p>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <ResponsiveContainer width="100%" height="100%">
+                                <ReBarChart data={barData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                  <XAxis interval={0} dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }} />
+                                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }} />
+                                  <Tooltip
+                                    cursor={{ fill: '#f8fafc', radius: 10 }}
+                                    content={({ active, payload }) => {
+                                      if (active && payload && payload.length) {
+                                        return (
+                                          <div className="bg-white p-3 border border-slate-100 shadow-xl rounded-2xl">
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">{payload[0].payload.name}</p>
+                                            <p className="text-sm font-mono font-bold text-slate-800">
+                                              {Number(payload[0].value).toLocaleString()}
+                                            </p>
+                                          </div>
+                                        );
+                                      }
+                                      return null;
+                                    }}
+                                  />
+                                  <Bar
+                                    dataKey="amount"
+                                    fill={statsType === 'expense' ? '#ef4444' : '#10b981'}
+                                    radius={[6, 6, 0, 0]}
+                                    barSize={20}
+                                  />
+                                </ReBarChart>
+                              </ResponsiveContainer>
+                            );
+                          }
+
+                          // Default Pie Chart logic
+                          const timeframeTransactions = transactions.filter(t => {
+                            const tDate = getSafeDate(t.timestamp);
+                            return statsTimeframe === "month"
+                              ? (tDate.getMonth() + 1 === m && tDate.getFullYear() === y)
+                              : tDate.getFullYear() === y;
+                          });
+
+                          const categorySource = statsType === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
+
+                          const chartData = [
+                            ...Object.entries(categorySource),
+                            ...customCategories.filter(c => c.type === statsType).map(c => [c.id || c.name, c.name])
+                          ]
+                            .map(([key, val]) => ({
+                              name: val,
+                              value: timeframeTransactions
+                                .filter(t => t.category === key && t.type === statsType)
+                                .reduce((acc, curr) => acc + curr.amount, 0)
+                            }))
+                            .filter(d => d.value > 0)
+                            .sort((a, b) => b.value - a.value);
+
+                          const totalAmount = chartData.reduce((acc, curr) => acc + curr.value, 0);
+
+                          return (
+                            <>
+                              {chartData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <RePieChart>
+                                    <Pie
+                                      data={chartData}
+                                      cx="50%"
+                                      cy="50%"
+                                      innerRadius={60}
+                                      outerRadius={80}
+                                      paddingAngle={5}
+                                      dataKey="value"
+                                    >
+                                      {chartData.map((_, index) => (
+                                        <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                                      ))}
+                                    </Pie>
+                                    <Tooltip
+                                      content={({ active, payload }) => {
+                                        if (active && payload && payload.length) {
+                                          return (
+                                            <div className="bg-white p-3 border border-slate-100 shadow-xl rounded-2xl">
+                                              <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">{payload[0].name}</p>
+                                              <p className="text-sm font-mono font-bold text-slate-800">
+                                                {Number(payload[0].value).toLocaleString()}
+                                              </p>
+                                              <p className="text-[8px] text-slate-300 mt-1">
+                                                佔比 {((Number(payload[0].value) / totalAmount) * 100).toFixed(1)}%
+                                              </p>
+                                            </div>
+                                          );
+                                        }
+                                        return null;
+                                      }}
+                                    />
+                                  </RePieChart>
+                                </ResponsiveContainer>
+                              ) : (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-300">
+                                  <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                                    <LucidePieChart size={32} />
+                                  </div>
+                                  <p className="text-xs font-bold">尚無{statsType === "income" ? "收入" : "支出"}數據</p>
+                                </div>
+                              )}
+                              {chartData.length > 0 && (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{statsType === "income" ? "總收入" : "總支出"}</p>
+                                  <p className="text-xl font-mono font-bold text-slate-800">
+                                    {totalAmount.toLocaleString()}
+                                  </p>
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </div>
                     </div>
 
-                    <div className="flex bg-slate-100 p-1 rounded-full flex-[2]">
-                      <button 
-                        onClick={() => setStatsType("expense")}
-                        className={`flex-1 py-1 text-[10px] font-bold rounded-full transition-all flex items-center justify-center gap-1.5 ${statsType === "expense" ? "bg-white shadow-sm text-red-500" : "text-slate-400"}`}
-                      >
-                        支出
-                      </button>
-                      <button 
-                        onClick={() => setStatsType("income")}
-                        className={`flex-1 py-1 text-[10px] font-bold rounded-full transition-all flex items-center justify-center gap-1.5 ${statsType === "income" ? "bg-white shadow-sm text-emerald-500" : "text-slate-400"}`}
-                      >
-                        收入
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className={`${chartType === 'pie' ? 'h-48' : 'h-64'} w-full relative`}>
-                    {(() => {
-                      const [y, m] = viewMonth.split('-').map(Number);
-                      
-                      if (chartType === 'line') {
-                        // Yearly line chart by category
-                        const yearlyTransactions = transactions.filter(t => {
+                    <div className="space-y-2">
+                      {(() => {
+                        const [y, m] = viewMonth.split('-').map(Number);
+                        const timeframeTransactions = transactions.filter(t => {
                           const tDate = getSafeDate(t.timestamp);
-                          return tDate.getFullYear() === y && t.type === statsType;
+                          return statsTimeframe === "month"
+                            ? (tDate.getMonth() + 1 === m && tDate.getFullYear() === y)
+                            : tDate.getFullYear() === y;
                         });
 
                         const categorySource = statsType === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
-                        const categories = [
+
+                        const summaryData = [
                           ...Object.entries(categorySource),
                           ...customCategories.filter(c => c.type === statsType).map(c => [c.id || c.name, c.name])
-                        ];
-
-                        const lineData = Array.from({ length: 12 }, (_, i) => {
-                          const monthNum = i + 1;
-                          const monthData: any = { name: `${monthNum}月` };
-                          categories.forEach(([key]) => {
-                            monthData[key] = yearlyTransactions
-                              .filter(t => t.category === key && getSafeDate(t.timestamp).getMonth() === i)
-                              .reduce((acc, curr) => acc + curr.amount, 0);
-                          });
-                          return monthData;
-                        });
-
-                        const activeCategories = categories.filter(([key]) => 
-                          yearlyTransactions.some(t => t.category === key)
-                        );
-
-                        if (yearlyTransactions.length === 0) {
-                          return (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-300">
-                               <LucideLineChart size={32} className="mb-2 opacity-20" />
-                               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">尚無年報資料</p>
-                            </div>
-                          );
-                        }
-
-                        return (
-                          <ResponsiveContainer width="100%" height="100%">
-                            <ReLineChart data={lineData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                              <XAxis interval={0} dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }} />
-                              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }} />
-                              <Tooltip 
-                                content={({ active, payload }) => {
-                                  if (active && payload && payload.length) {
-                                    return (
-                                      <div className="bg-white p-3 border border-slate-100 shadow-xl rounded-2xl min-w-[120px]">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">{payload[0].payload.name}</p>
-                                        <div className="space-y-1.5">
-                                          {payload.sort((a:any, b:any) => b.value - a.value).slice(0, 5).map((entry: any, index: number) => {
-                                            const catName = categories.find(([k]) => k === entry.dataKey)?.[1] || entry.dataKey;
-                                            return ( entry.value > 0 &&
-                                              <div key={`tip-${index}`} className="flex justify-between items-center gap-4">
-                                                <div className="flex items-center gap-1.5">
-                                                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: entry.color }} />
-                                                  <span className="text-[10px] font-bold text-slate-600">{catName}</span>
-                                                </div>
-                                                <span className="text-[10px] font-mono font-bold text-slate-800">{Number(entry.value).toLocaleString()}</span>
-                                              </div>
-                                            );
-                                          })}
-                                        </div>
-                                      </div>
-                                    );
-                                  }
-                                  return null;
-                                }}
-                              />
-                              {activeCategories.map(([key, label], index) => {
-                                if (hiddenChartCategories.has(key)) return null;
-                                return (
-                                  <Line 
-                                    key={key}
-                                    type="monotone"
-                                    dataKey={key}
-                                    name={label}
-                                    stroke={CHART_COLORS[index % CHART_COLORS.length]}
-                                    strokeWidth={2}
-                                    dot={false}
-                                    activeDot={{ r: 4, strokeWidth: 0 }}
-                                  />
-                                );
-                              })}
-                            </ReLineChart>
-                          </ResponsiveContainer>
-                        );
-                      }
-
-                      if (chartType === 'bar') {
-                        // Yearly bar chart: monthly totals
-                        const yearlyTransactions = transactions.filter(t => {
-                          const tDate = getSafeDate(t.timestamp);
-                          return tDate.getFullYear() === y && t.type === statsType;
-                        });
-
-                        const barData = Array.from({ length: 12 }, (_, i) => {
-                          const monthNum = i + 1;
-                          return {
-                            name: `${monthNum}月`,
-                            amount: yearlyTransactions
-                              .filter(t => getSafeDate(t.timestamp).getMonth() === i)
+                        ]
+                          .map(([key, val]) => ({
+                            id: key,
+                            name: val,
+                            value: timeframeTransactions
+                              .filter(t => t.category === key && t.type === statsType)
                               .reduce((acc, curr) => acc + curr.amount, 0)
-                          };
-                        });
+                          }))
+                          .filter(d => d.value > 0)
+                          .sort((a, b) => b.value - a.value);
 
-                        if (yearlyTransactions.length === 0) {
-                          return (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-300">
-                               <LucideBarChart size={32} className="mb-2 opacity-20" />
-                               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">尚無年報資料</p>
-                            </div>
-                          );
-                        }
+                        const totalAmount = summaryData.reduce((acc, curr) => acc + curr.value, 0);
 
                         return (
-                          <ResponsiveContainer width="100%" height="100%">
-                            <ReBarChart data={barData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                              <XAxis interval={0} dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }} />
-                              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }} />
-                              <Tooltip 
-                                cursor={{ fill: '#f8fafc', radius: 10 }}
-                                content={({ active, payload }) => {
-                                  if (active && payload && payload.length) {
-                                    return (
-                                      <div className="bg-white p-3 border border-slate-100 shadow-xl rounded-2xl">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">{payload[0].payload.name}</p>
-                                        <p className="text-sm font-mono font-bold text-slate-800">
-                                          {Number(payload[0].value).toLocaleString()}
-                                        </p>
-                                      </div>
-                                    );
-                                  }
-                                  return null;
-                                }}
-                              />
-                              <Bar 
-                                dataKey="amount" 
-                                fill={statsType === 'expense' ? '#ef4444' : '#10b981'} 
-                                radius={[6, 6, 0, 0]} 
-                                barSize={20}
-                              />
-                            </ReBarChart>
-                          </ResponsiveContainer>
-                        );
-                      }
-
-                      // Default Pie Chart logic
-                      const timeframeTransactions = transactions.filter(t => {
-                        const tDate = getSafeDate(t.timestamp);
-                        return statsTimeframe === "month" 
-                          ? (tDate.getMonth() + 1 === m && tDate.getFullYear() === y)
-                          : tDate.getFullYear() === y;
-                      });
-                      
-                      const categorySource = statsType === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
-                      
-                      const chartData = [
-                        ...Object.entries(categorySource),
-                        ...customCategories.filter(c => c.type === statsType).map(c => [c.id || c.name, c.name])
-                      ]
-                        .map(([key, val]) => ({
-                          name: val,
-                          value: timeframeTransactions
-                            .filter(t => t.category === key && t.type === statsType)
-                            .reduce((acc, curr) => acc + curr.amount, 0)
-                        }))
-                        .filter(d => d.value > 0)
-                        .sort((a, b) => b.value - a.value);
-                      
-                      const totalAmount = chartData.reduce((acc, curr) => acc + curr.value, 0);
-
-                      return (
-                        <>
-                          {chartData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%">
-                              <RePieChart>
-                                <Pie
-                                  data={chartData}
-                                  cx="50%"
-                                  cy="50%"
-                                  innerRadius={60}
-                                  outerRadius={80}
-                                  paddingAngle={5}
-                                  dataKey="value"
+                          <>
+                            {chartType === 'line' && summaryData.length > 0 && (
+                              <div className="flex justify-end gap-3 px-2 mb-2">
+                                <button
+                                  onClick={() => setHiddenChartCategories(new Set())}
+                                  className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 uppercase tracking-wider"
                                 >
-                                  {chartData.map((_, index) => (
-                                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                                  ))}
-                                </Pie>
-                                <Tooltip 
-                                  content={({ active, payload }) => {
-                                    if (active && payload && payload.length) {
-                                      return (
-                                        <div className="bg-white p-3 border border-slate-100 shadow-xl rounded-2xl">
-                                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">{payload[0].name}</p>
-                                          <p className="text-sm font-mono font-bold text-slate-800">
-                                            {Number(payload[0].value).toLocaleString()}
-                                          </p>
-                                          <p className="text-[8px] text-slate-300 mt-1">
-                                            佔比 {((Number(payload[0].value) / totalAmount) * 100).toFixed(1)}%
-                                          </p>
-                                        </div>
-                                      );
-                                    }
-                                    return null;
-                                  }}
-                                />
-                              </RePieChart>
-                            </ResponsiveContainer>
-                          ) : (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-300">
-                              <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                                <LucidePieChart size={32} />
+                                  全選
+                                </button>
+                                <button
+                                  onClick={() => setHiddenChartCategories(new Set(summaryData.map(d => d.id)))}
+                                  className="text-[10px] font-bold text-slate-400 hover:text-slate-500 uppercase tracking-wider"
+                                >
+                                  取消全選
+                                </button>
                               </div>
-                              <p className="text-xs font-bold">尚無{statsType === "income" ? "收入" : "支出"}數據</p>
-                            </div>
-                          )}
-                          {chartData.length > 0 && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{statsType === "income" ? "總收入" : "總支出"}</p>
-                              <p className="text-xl font-mono font-bold text-slate-800">
-                                {totalAmount.toLocaleString()}
-                              </p>
-                            </div>
-                          )}
-                        </>
-                      );
-                    })()}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                   {(() => {
-                      const [y, m] = viewMonth.split('-').map(Number);
-                      const timeframeTransactions = transactions.filter(t => {
-                        const tDate = getSafeDate(t.timestamp);
-                        return statsTimeframe === "month" 
-                          ? (tDate.getMonth() + 1 === m && tDate.getFullYear() === y)
-                          : tDate.getFullYear() === y;
-                      });
-                      
-                      const categorySource = statsType === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
-
-                      const summaryData = [
-                        ...Object.entries(categorySource),
-                        ...customCategories.filter(c => c.type === statsType).map(c => [c.id || c.name, c.name])
-                      ]
-                        .map(([key, val]) => ({
-                          id: key,
-                          name: val,
-                          value: timeframeTransactions
-                            .filter(t => t.category === key && t.type === statsType)
-                            .reduce((acc, curr) => acc + curr.amount, 0)
-                        }))
-                        .filter(d => d.value > 0)
-                        .sort((a, b) => b.value - a.value);
-
-                      const totalAmount = summaryData.reduce((acc, curr) => acc + curr.value, 0);
-
-                      return (
-                        <>
-                          {chartType === 'line' && summaryData.length > 0 && (
-                            <div className="flex justify-end gap-3 px-2 mb-2">
-                              <button 
-                                onClick={() => setHiddenChartCategories(new Set())}
-                                className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 uppercase tracking-wider"
-                              >
-                                全選
-                              </button>
-                              <button 
-                                onClick={() => setHiddenChartCategories(new Set(summaryData.map(d => d.id)))}
-                                className="text-[10px] font-bold text-slate-400 hover:text-slate-500 uppercase tracking-wider"
-                              >
-                                取消全選
-                              </button>
-                            </div>
-                          )}
-                          {summaryData.map((item, idx) => {
-                            const isHidden = hiddenChartCategories.has(item.id);
-                            return (
-                              <div 
-                                key={item.id} 
-                                onClick={() => {
-                                  if (chartType === 'line') {
-                                    const newHidden = new Set(hiddenChartCategories);
-                                    if (newHidden.has(item.id)) {
-                                      newHidden.delete(item.id);
-                                    } else {
-                                      newHidden.add(item.id);
+                            )}
+                            {summaryData.map((item, idx) => {
+                              const isHidden = hiddenChartCategories.has(item.id);
+                              return (
+                                <div
+                                  key={item.id}
+                                  onClick={() => {
+                                    if (chartType === 'line') {
+                                      const newHidden = new Set(hiddenChartCategories);
+                                      if (newHidden.has(item.id)) {
+                                        newHidden.delete(item.id);
+                                      } else {
+                                        newHidden.add(item.id);
+                                      }
+                                      setHiddenChartCategories(newHidden);
                                     }
-                                    setHiddenChartCategories(newHidden);
-                                  }
-                                }}
-                                className={`bg-white py-3.5 px-5 rounded-[1.5rem] border border-slate-100 flex items-center justify-between shadow-sm active:scale-[0.98] transition-all ${chartType === 'line' ? 'cursor-pointer' : ''} ${isHidden ? 'opacity-30' : ''}`}
-                              >
-                                <div className="flex items-center gap-4">
-                                  <div 
-                                    className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shadow-inner"
-                                    style={{ backgroundColor: `${CHART_COLORS[idx % CHART_COLORS.length]}20` }}
-                                  >
-                                    {getCategoryEmoji(item.id, customCategories)}
-                                  </div>
-                                  <div>
-                                    <p className="text-sm font-bold text-slate-700">{item.name}</p>
-                                    <div className="flex items-center gap-2 mt-1">
-                                      <div className="w-16 h-1 bg-slate-100 rounded-full overflow-hidden">
-                                        <motion.div 
-                                          initial={{ width: 0 }}
-                                          animate={{ width: `${(item.value / totalAmount) * 100}%` }}
-                                          className="h-full" 
-                                          style={{ backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] }}
-                                        />
+                                  }}
+                                  className={`bg-white py-3.5 px-5 rounded-[1.5rem] border border-slate-100 flex items-center justify-between shadow-sm active:scale-[0.98] transition-all ${chartType === 'line' ? 'cursor-pointer' : ''} ${isHidden ? 'opacity-30' : ''}`}
+                                >
+                                  <div className="flex items-center gap-4">
+                                    <div
+                                      className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shadow-inner"
+                                      style={{ backgroundColor: `${CHART_COLORS[idx % CHART_COLORS.length]}20` }}
+                                    >
+                                      {getCategoryEmoji(item.id, customCategories)}
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-bold text-slate-700">{item.name}</p>
+                                      <div className="flex items-center gap-2 mt-1">
+                                        <div className="w-16 h-1 bg-slate-100 rounded-full overflow-hidden">
+                                          <motion.div
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${(item.value / totalAmount) * 100}%` }}
+                                            className="h-full"
+                                            style={{ backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] }}
+                                          />
+                                        </div>
+                                        <span className="text-[8px] font-bold text-slate-400">{Math.round((item.value / totalAmount) * 100)}%</span>
                                       </div>
-                                      <span className="text-[8px] font-bold text-slate-400">{Math.round((item.value / totalAmount) * 100)}%</span>
                                     </div>
                                   </div>
+                                  <div className="text-right">
+                                    <p className="text-sm font-mono font-bold text-slate-800">{item.value.toLocaleString()}</p>
+                                  </div>
                                 </div>
-                                <div className="text-right">
-                                  <p className="text-sm font-mono font-bold text-slate-800">{item.value.toLocaleString()}</p>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </>
-                      );
-                   })()}
-                </div>
-              </motion.div>
-            )}
+                              );
+                            })}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </motion.div>
+                )}
 
-            {activeTab === "accounts" && (
-              <motion.div 
-                key="accounts"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="pt-5 space-y-6 pb-10"
-              >
-                <div className="flex items-center justify-between px-2">
-                  <div className="flex items-center gap-3">
-                    <h2 className="text-xl font-bold text-slate-800">銀行帳戶管理</h2>
-                    <span className="px-2 py-0.5 bg-slate-100 text-slate-400 text-[10px] font-bold rounded-md">
-                      {accounts.length}
-                    </span>
-                  </div>
-                  <button 
-                    onClick={() => {
-                      setNewAccountName("");
-                      setNewBankName("");
-                      setNewBalance("");
-                      setShowAddAccount(true);
-                    }}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-app-primary text-app-accent rounded-full text-[10px] font-bold shadow-lg shadow-app-primary/20 active:scale-95 transition-all"
+                {activeTab === "accounts" && (
+                  <motion.div
+                    key="accounts"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="pt-5 space-y-6 pb-10"
                   >
-                    <Plus size={14} /> 新增帳戶
-                  </button>
-                </div>
-                
-                {/* Total Balance Card - Main Visual */}
-                <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-[2rem] p-8 text-white shadow-xl shadow-slate-200 text-center relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-6 opacity-10">
-                    <ClipboardList size={64} />
-                  </div>
-                  <div className="absolute top-0 right-0 p-4">
-                    <button 
-                      onClick={async () => {
-                        if (user) {
-                          await updateDoc(doc(db, "users", user.uid), {
-                            isGlobalHidden: !isGlobalHidden
-                          });
-                        }
-                      }}
-                      className="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl transition-all backdrop-blur-md active:scale-95"
-                    >
-                      {isGlobalHidden ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-                  <p className="text-[11px] font-bold opacity-60 uppercase tracking-[0.2em] mb-2">存款總額 · Total Balance</p>
-                  <h3 className="text-3xl font-mono font-bold tracking-tight">
-                    {isGlobalHidden ? "****" : accounts.reduce((acc, a) => acc + a.balance, 0).toLocaleString()}
-                  </h3>
-                </div>
-
-                <div className="grid grid-cols-1 gap-3">
-                  {accounts.map((acc, index) => (
-                    <motion.div 
-                      key={acc.id}
-                      layout
-                      className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm relative overflow-hidden group"
-                    >
-                      <div className="absolute top-0 right-0 p-2 flex gap-1 items-center">
-                        <button 
-                          onClick={() => {
-                            setEditingAccount(acc);
-                            setNewAccountName(acc.name);
-                            setNewBankName(acc.bankName);
-                            setNewBalance(acc.balance.toString());
-                            setNewAccountColor(acc.color);
-                          }}
-                          className="p-2 text-slate-400 hover:text-blue-500 transition-colors"
-                          title="修改帳戶"
-                        >
-                          <Pencil size={18} />
-                        </button>
-                        <button 
-                          onClick={() => setShowDeleteConfirm(acc.id!)}
-                          className="p-2 text-slate-400 hover:text-red-500 transition-colors"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                        <div className="flex flex-col gap-1 ml-1 bg-slate-50 rounded-lg p-0.5 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-                          <button 
-                            disabled={index === 0}
-                            onClick={() => handleMoveAccount(acc.id!, 'up')}
-                            className="p-1 text-slate-300 hover:text-slate-600 disabled:opacity-20"
-                          >
-                            <ChevronUp size={12} />
-                          </button>
-                          <button 
-                            disabled={index === accounts.length - 1}
-                            onClick={() => handleMoveAccount(acc.id!, 'down')}
-                            className="p-1 text-slate-300 hover:text-slate-600 disabled:opacity-20"
-                          >
-                            <ChevronDown size={12} />
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3 mb-3">
-                        <div 
-                          className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shadow-inner font-bold"
-                          style={{ backgroundColor: `${acc.color}20`, color: acc.color, border: `1px solid ${acc.color}40` }}
-                        >
-                          {acc.bankName.slice(0, 1) || "🏦"}
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-slate-800 text-sm">{acc.name}</h4>
-                          <p className="text-[9px] text-slate-400 font-medium uppercase tracking-wider">{acc.bankName}</p>
-                        </div>
-                      </div>
-
-                        <div className="flex justify-between items-end">
-                          <p className="text-xl font-mono font-bold text-slate-700">
-                            {isGlobalHidden ? "****" : acc.balance.toLocaleString()}
-                          </p>
-                          <div className="flex gap-2">
-                            <button 
-                              onClick={() => {
-                                setShowCashTransfer({ type: 'withdraw', account: acc });
-                                setCashTransferAmount("");
-                              }}
-                              className="px-3 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-lg hover:bg-slate-200 transition-colors"
-                            >
-                              提款
-                            </button>
-                            <button 
-                              onClick={() => {
-                                setShowCashTransfer({ type: 'deposit', account: acc });
-                                setCashTransferAmount("");
-                              }}
-                              className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded-lg hover:bg-emerald-100 transition-colors"
-                            >
-                              存款
-                            </button>
-                          </div>
-                        </div>
-                      </motion.div>
-                  ))}
-
-                  {accounts.length === 0 && (
-                    <div className="py-20 text-center">
-                      <div className="w-16 h-16 bg-slate-50 rounded-3xl mx-auto flex items-center justify-center text-slate-200 mb-4">
-                        <Plus size={32} />
-                      </div>
-                      <p className="text-sm font-bold text-slate-300">尚未建立帳戶</p>
-                      <p className="text-[10px] text-slate-300">點擊上方按鈕開始管理您的銀行資產</p>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-
-            {activeTab === "profile" && (
-              <motion.div 
-                key="profile"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="pt-5 space-y-6 pb-10"
-              >
-                <div className="text-center">
-                  <div className="w-24 h-24 bg-app-primary rounded-3xl mx-auto shadow-lg shadow-app-primary/20 flex items-center justify-center text-4xl mb-4 overflow-hidden">
-                    {profile?.photoURL ? (
-                      <img src={profile.photoURL} alt="avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                    ) : (
-                      <span className="text-app-accent">👤</span>
-                    )}
-                  </div>
-                  <h2 className="text-xl font-bold text-slate-800">{profile?.displayName || "新用戶"}</h2>
-                  <p className="text-sm text-slate-400">{user?.email}</p>
-                </div>
- 
-                <div className="bg-white rounded-3xl border border-slate-100 divide-y divide-slate-50 shadow-sm">
-                  <div className="p-4 flex items-center justify-between">
-                    <span className="text-base font-bold text-slate-600">現金餘額</span>
-                    {(() => {
-                      const totalAccountBalance = accounts.reduce((acc, a) => acc + a.balance, 0);
-                      const cashBalance = profile?.cashBalance ?? ((profile?.balance || 0) - totalAccountBalance);
-                      return (
-                        <span className={`text-xl font-mono font-bold ${cashBalance < 0 ? 'text-red-500' : 'text-emerald-500'}`}>
-                          {isGlobalHidden ? "****" : cashBalance.toLocaleString()}
+                    <div className="flex items-center justify-between px-2">
+                      <div className="flex items-center gap-3">
+                        <h2 className="text-xl font-bold text-slate-800">銀行帳戶管理</h2>
+                        <span className="px-2 py-0.5 bg-slate-100 text-slate-400 text-[10px] font-bold rounded-md">
+                          {accounts.length}
                         </span>
-                      );
-                    })()}
-                  </div>
-                  <div className="p-4 flex items-center justify-between">
-                    <span className="text-sm font-bold text-slate-600">上次活動</span>
-                    <span className="text-sm font-bold text-slate-400">
-                      {profile?.lastActive ? getSafeDate(profile.lastActive).toLocaleDateString() : "-"}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-slate-800">分類項目管理</h3>
-                    <div className="flex bg-slate-50 p-1 rounded-xl">
-                      <button 
-                        onClick={() => setCatManageType("expense")}
-                        className={`px-3 py-1 text-[10px] font-bold rounded-lg transition-all ${catManageType === "expense" ? "bg-white shadow-sm text-red-500" : "text-slate-400"}`}
-                      >支出</button>
-                      <button 
-                        onClick={() => setCatManageType("income")}
-                        className={`px-3 py-1 text-[10px] font-bold rounded-lg transition-all ${catManageType === "income" ? "bg-white shadow-sm text-emerald-500" : "text-slate-400"}`}
-                      >收入</button>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setNewAccountName("");
+                          setNewBankName("");
+                          setNewBalance("");
+                          setShowAddAccount(true);
+                        }}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-app-primary text-app-accent rounded-full text-[10px] font-bold shadow-lg shadow-app-primary/20 active:scale-95 transition-all"
+                      >
+                        <Plus size={14} /> 新增帳戶
+                      </button>
                     </div>
-                  </div>
 
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => {
-                        setNewCatName("");
-                        setNewCatEmoji("✨");
-                        setShowAddCategory(catManageType);
-                      }}
-                      className={`w-full text-xs font-bold py-3.5 rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-2 ${catManageType === "expense" ? "bg-red-50 text-red-500" : "bg-emerald-50 text-emerald-500"}`}
-                    >
-                      <Plus size={16} /> 新增{catManageType === "expense" ? "支出" : "收入"}分類
-                    </button>
-                  </div>
-
-                  <div className="space-y-3">
-                    {/* Default Categories Section */}
-                    <div className="space-y-1.5">
-                        <div className="grid grid-cols-2 gap-2">
-                          {(() => {
-                            const allFixedIds = Object.keys(catManageType === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES);
-                            const savedOrder = catManageType === 'expense' ? profile?.expenseCategoryOrder : profile?.incomeCategoryOrder;
-                            let sortedFixedIds = allFixedIds;
-                            if (savedOrder && savedOrder.length > 0) {
-                              sortedFixedIds = [...allFixedIds].sort((a, b) => {
-                                const ai = savedOrder.indexOf(a);
-                                const bi = savedOrder.indexOf(b);
-                                if (ai === -1 && bi === -1) return 0;
-                                if (ai === -1) return 1;
-                                if (bi === -1) return -1;
-                                return ai - bi;
+                    {/* Total Balance Card - Main Visual */}
+                    <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-[2rem] p-8 text-white shadow-xl shadow-slate-200 text-center relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-6 opacity-10">
+                        <ClipboardList size={64} />
+                      </div>
+                      <div className="absolute top-0 right-0 p-4">
+                        <button
+                          onClick={async () => {
+                            if (user) {
+                              await updateDoc(doc(db, "users", user.uid), {
+                                isGlobalHidden: !isGlobalHidden
                               });
                             }
-                            const labels = catManageType === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
-                            
-                            return sortedFixedIds.map((id, index) => (
-                              <div key={id} className="flex items-center justify-between p-2 px-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                                <div className="flex items-center gap-2 overflow-hidden">
-                                  <span className="text-lg flex-shrink-0">{getCategoryEmoji(id)}</span>
-                                  <span className="text-xs font-medium text-slate-600 truncate">{labels[id]}</span>
-                                </div>
-                                <div className="flex items-center gap-0.5">
-                                  <button 
-                                    onClick={() => toggleCategoryVisibility(id)}
-                                    className={`p-1 transition-colors ${profile?.hiddenCategoryIds?.includes(id) ? 'text-blue-500' : 'text-slate-400 hover:text-blue-500'}`}
-                                  >
-                                    {profile?.hiddenCategoryIds?.includes(id) ? <EyeOff size={14} /> : <Eye size={14} />}
-                                  </button>
-                                  <div className="flex flex-col bg-slate-100 rounded-md p-0.5 ml-0.5">
-                                    <button 
-                                      disabled={index === 0}
-                                      onClick={() => handleMoveFixedCategory(id, catManageType, 'up')}
-                                      className="p-0 text-slate-300 hover:text-slate-600 disabled:opacity-20"
-                                    >
-                                      <ChevronUp size={14} />
-                                    </button>
-                                    <button 
-                                      disabled={index === sortedFixedIds.length - 1}
-                                      onClick={() => handleMoveFixedCategory(id, catManageType, 'down')}
-                                      className="p-0 text-slate-300 hover:text-slate-600 disabled:opacity-20"
-                                    >
-                                      <ChevronDown size={14} />
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            ));
-                          })()}
-                        </div>
+                          }}
+                          className="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl transition-all backdrop-blur-md active:scale-95"
+                        >
+                          {isGlobalHidden ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                      <p className="text-[11px] font-bold opacity-60 uppercase tracking-[0.2em] mb-2">存款總額 · Total Balance</p>
+                      <h3 className="text-3xl font-mono font-bold tracking-tight">
+                        {isGlobalHidden ? "****" : accounts.reduce((acc, a) => acc + a.balance, 0).toLocaleString()}
+                      </h3>
                     </div>
 
-                    {/* Custom Categories Section */}
-                    <div className="space-y-1.5">
-                       <p className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">自訂分類</p>
-                       {customCategories.filter(c => c.type === catManageType).length > 0 ? (
-                        <div className="grid grid-cols-2 gap-2">
-                          {(() => {
-                            const filteredCats = customCategories.filter(c => c.type === catManageType);
-                            return filteredCats.map((cat, index) => (
-                              <div key={cat.id} className="flex items-center justify-between p-2 px-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                                <div className="flex items-center gap-2 overflow-hidden">
-                                  <span className="text-lg flex-shrink-0">{cat.emoji}</span>
-                                  <span className="text-xs font-medium text-slate-600 truncate">{cat.name}</span>
-                                </div>
-                                <div className="flex items-center gap-0.5">
-                                  <button 
-                                    onClick={() => toggleCategoryVisibility(cat.id!)}
-                                    className={`p-1 transition-colors ${profile?.hiddenCategoryIds?.includes(cat.id!) ? 'text-blue-500' : 'text-slate-400 hover:text-blue-500'}`}
-                                  >
-                                    {profile?.hiddenCategoryIds?.includes(cat.id!) ? <EyeOff size={14} /> : <Eye size={14} />}
-                                  </button>
-                                  <button 
-                                    onClick={() => { 
-                                      const hasTransactions = transactions.some(t => t.category === cat.id); 
-                                      if (hasTransactions) { 
-                                        setCatHasTransactionsNotice(true);
-                                      } else {
-                                        setCatHasTransactionsNotice(false);
-                                      }
-                                      setShowDeleteCatConfirm(cat.id!); 
-                                    }}
-                                    className="p-1 text-slate-400 hover:text-red-500 transition-colors ml-0.5"
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
-                                  <div className="flex flex-col bg-slate-100 rounded-md p-0.5 ml-0.5">
-                                    <button 
-                                      disabled={index === 0}
-                                      onClick={() => handleMoveCategory(cat.id!, 'up')}
-                                      className="p-0 text-slate-300 hover:text-slate-600 disabled:opacity-20"
-                                    >
-                                      <ChevronUp size={14} />
-                                    </button>
-                                    <button 
-                                      disabled={index === filteredCats.length - 1}
-                                      onClick={() => handleMoveCategory(cat.id!, 'down')}
-                                      className="p-0 text-slate-300 hover:text-slate-600 disabled:opacity-20"
-                                    >
-                                      <ChevronDown size={14} />
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            ));
-                          })()}
-                        </div>
-                      ) : (
-                        <div className="text-center py-4 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
-                          <p className="text-[10px] text-slate-300 italic">尚未建立自訂分類</p>
+                    <div className="grid grid-cols-1 gap-3">
+                      {accounts.map((acc, index) => (
+                        <motion.div
+                          key={acc.id}
+                          layout
+                          className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm relative overflow-hidden group"
+                        >
+                          <div className="absolute top-0 right-0 p-2 flex gap-1 items-center">
+                            <button
+                              onClick={() => {
+                                setEditingAccount(acc);
+                                setNewAccountName(acc.name);
+                                setNewBankName(acc.bankName);
+                                setNewBalance(acc.balance.toString());
+                                setNewAccountColor(acc.color);
+                              }}
+                              className="p-2 text-slate-400 hover:text-blue-500 transition-colors"
+                              title="修改帳戶"
+                            >
+                              <Pencil size={18} />
+                            </button>
+                            <button
+                              onClick={() => setShowDeleteConfirm(acc.id!)}
+                              className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                            <div className="flex flex-col gap-1 ml-1 bg-slate-50 rounded-lg p-0.5 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                              <button
+                                disabled={index === 0}
+                                onClick={() => handleMoveAccount(acc.id!, 'up')}
+                                className="p-1 text-slate-300 hover:text-slate-600 disabled:opacity-20"
+                              >
+                                <ChevronUp size={12} />
+                              </button>
+                              <button
+                                disabled={index === accounts.length - 1}
+                                onClick={() => handleMoveAccount(acc.id!, 'down')}
+                                className="p-1 text-slate-300 hover:text-slate-600 disabled:opacity-20"
+                              >
+                                <ChevronDown size={12} />
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 mb-3">
+                            <div
+                              className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shadow-inner font-bold"
+                              style={{ backgroundColor: `${acc.color}20`, color: acc.color, border: `1px solid ${acc.color}40` }}
+                            >
+                              {acc.bankName.slice(0, 1) || "🏦"}
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-slate-800 text-sm">{acc.name}</h4>
+                              <p className="text-[9px] text-slate-400 font-medium uppercase tracking-wider">{acc.bankName}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex justify-between items-end">
+                            <p className="text-xl font-mono font-bold text-slate-700">
+                              {isGlobalHidden ? "****" : acc.balance.toLocaleString()}
+                            </p>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => {
+                                  setShowCashTransfer({ type: 'withdraw', account: acc });
+                                  setCashTransferAmount("");
+                                }}
+                                className="px-3 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-lg hover:bg-slate-200 transition-colors"
+                              >
+                                提款
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setShowCashTransfer({ type: 'deposit', account: acc });
+                                  setCashTransferAmount("");
+                                }}
+                                className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded-lg hover:bg-emerald-100 transition-colors"
+                              >
+                                存款
+                              </button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+
+                      {accounts.length === 0 && (
+                        <div className="py-20 text-center">
+                          <div className="w-16 h-16 bg-slate-50 rounded-3xl mx-auto flex items-center justify-center text-slate-200 mb-4">
+                            <Plus size={32} />
+                          </div>
+                          <p className="text-sm font-bold text-slate-300">尚未建立帳戶</p>
+                          <p className="text-[10px] text-slate-300">點擊上方按鈕開始管理您的銀行資產</p>
                         </div>
                       )}
                     </div>
-                  </div>
-                </div>
+                  </motion.div>
+                )}
 
-                <button 
-                  onClick={() => auth.signOut()}
-                  className="w-full mt-6 group flex items-center justify-center gap-2 py-4 px-6 bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-2xl border border-slate-100 hover:border-red-100 transition-all active:scale-[0.98]"
-                >
-                  <LogOut size={16} className="transition-transform group-hover:translate-x-0.5" />
-                  <span className="text-sm font-bold tracking-wide">安全登出</span>
-                </button>
-              </motion.div>
-            )}
-            </>
+                {activeTab === "profile" && (
+                  <motion.div
+                    key="profile"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="pt-5 space-y-6 pb-10"
+                  >
+                    <div className="text-center">
+                      <div className="w-24 h-24 bg-app-primary rounded-3xl mx-auto shadow-lg shadow-app-primary/20 flex items-center justify-center text-4xl mb-4 overflow-hidden">
+                        {profile?.photoURL ? (
+                          <img src={profile.photoURL} alt="avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        ) : (
+                          <span className="text-app-accent">👤</span>
+                        )}
+                      </div>
+                      <h2 className="text-xl font-bold text-slate-800">{profile?.displayName || "新用戶"}</h2>
+                      <p className="text-sm text-slate-400">{user?.email}</p>
+                    </div>
+
+                    <div className="bg-white rounded-3xl border border-slate-100 divide-y divide-slate-50 shadow-sm">
+                      <div className="p-4 flex items-center justify-between">
+                        <span className="text-base font-bold text-slate-600">現金餘額</span>
+                        {(() => {
+                          const totalAccountBalance = accounts.reduce((acc, a) => acc + a.balance, 0);
+                          const cashBalance = profile?.cashBalance ?? ((profile?.balance || 0) - totalAccountBalance);
+                          return (
+                            <span className={`text-xl font-mono font-bold ${cashBalance < 0 ? 'text-red-500' : 'text-emerald-500'}`}>
+                              {isGlobalHidden ? "****" : cashBalance.toLocaleString()}
+                            </span>
+                          );
+                        })()}
+                      </div>
+                      <div className="p-4 flex items-center justify-between">
+                        <span className="text-sm font-bold text-slate-600">上次活動</span>
+                        <span className="text-sm font-bold text-slate-400">
+                          {profile?.lastActive ? getSafeDate(profile.lastActive).toLocaleDateString() : "-"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-bold text-slate-800">分類項目管理</h3>
+                        <div className="flex bg-slate-50 p-1 rounded-xl">
+                          <button
+                            onClick={() => setCatManageType("expense")}
+                            className={`px-3 py-1 text-[10px] font-bold rounded-lg transition-all ${catManageType === "expense" ? "bg-white shadow-sm text-red-500" : "text-slate-400"}`}
+                          >支出</button>
+                          <button
+                            onClick={() => setCatManageType("income")}
+                            className={`px-3 py-1 text-[10px] font-bold rounded-lg transition-all ${catManageType === "income" ? "bg-white shadow-sm text-emerald-500" : "text-slate-400"}`}
+                          >收入</button>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setNewCatName("");
+                            setNewCatEmoji("✨");
+                            setShowAddCategory(catManageType);
+                          }}
+                          className={`w-full text-xs font-bold py-3.5 rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-2 ${catManageType === "expense" ? "bg-red-50 text-red-500" : "bg-emerald-50 text-emerald-500"}`}
+                        >
+                          <Plus size={16} /> 新增{catManageType === "expense" ? "支出" : "收入"}分類
+                        </button>
+                      </div>
+
+                      <div className="space-y-3">
+                        {/* Default Categories Section */}
+                        <div className="space-y-1.5">
+                          <div className="grid grid-cols-2 gap-2">
+                            {(() => {
+                              const allFixedIds = Object.keys(catManageType === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES);
+                              const savedOrder = catManageType === 'expense' ? profile?.expenseCategoryOrder : profile?.incomeCategoryOrder;
+                              let sortedFixedIds = allFixedIds;
+                              if (savedOrder && savedOrder.length > 0) {
+                                sortedFixedIds = [...allFixedIds].sort((a, b) => {
+                                  const ai = savedOrder.indexOf(a);
+                                  const bi = savedOrder.indexOf(b);
+                                  if (ai === -1 && bi === -1) return 0;
+                                  if (ai === -1) return 1;
+                                  if (bi === -1) return -1;
+                                  return ai - bi;
+                                });
+                              }
+                              const labels = catManageType === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
+
+                              return sortedFixedIds.map((id, index) => (
+                                <div key={id} className="flex items-center justify-between p-2 px-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                                  <div className="flex items-center gap-2 overflow-hidden">
+                                    <span className="text-lg flex-shrink-0">{getCategoryEmoji(id)}</span>
+                                    <span className="text-xs font-medium text-slate-600 truncate">{labels[id]}</span>
+                                  </div>
+                                  <div className="flex items-center gap-0.5">
+                                    <button
+                                      onClick={() => toggleCategoryVisibility(id)}
+                                      className={`p-1 transition-colors ${profile?.hiddenCategoryIds?.includes(id) ? 'text-blue-500' : 'text-slate-400 hover:text-blue-500'}`}
+                                    >
+                                      {profile?.hiddenCategoryIds?.includes(id) ? <EyeOff size={14} /> : <Eye size={14} />}
+                                    </button>
+                                    <div className="flex flex-col bg-slate-100 rounded-md p-0.5 ml-0.5">
+                                      <button
+                                        disabled={index === 0}
+                                        onClick={() => handleMoveFixedCategory(id, catManageType, 'up')}
+                                        className="p-0 text-slate-300 hover:text-slate-600 disabled:opacity-20"
+                                      >
+                                        <ChevronUp size={14} />
+                                      </button>
+                                      <button
+                                        disabled={index === sortedFixedIds.length - 1}
+                                        onClick={() => handleMoveFixedCategory(id, catManageType, 'down')}
+                                        className="p-0 text-slate-300 hover:text-slate-600 disabled:opacity-20"
+                                      >
+                                        <ChevronDown size={14} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ));
+                            })()}
+                          </div>
+                        </div>
+
+                        {/* Custom Categories Section */}
+                        <div className="space-y-1.5">
+                          <p className="text-[10px] font-bold text-slate-300 uppercase tracking-wider ml-1">自訂分類</p>
+                          {customCategories.filter(c => c.type === catManageType).length > 0 ? (
+                            <div className="grid grid-cols-2 gap-2">
+                              {(() => {
+                                const filteredCats = customCategories.filter(c => c.type === catManageType);
+                                return filteredCats.map((cat, index) => (
+                                  <div key={cat.id} className="flex items-center justify-between p-2 px-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                      <span className="text-lg flex-shrink-0">{cat.emoji}</span>
+                                      <span className="text-xs font-medium text-slate-600 truncate">{cat.name}</span>
+                                    </div>
+                                    <div className="flex items-center gap-0.5">
+                                      <button
+                                        onClick={() => toggleCategoryVisibility(cat.id!)}
+                                        className={`p-1 transition-colors ${profile?.hiddenCategoryIds?.includes(cat.id!) ? 'text-blue-500' : 'text-slate-400 hover:text-blue-500'}`}
+                                      >
+                                        {profile?.hiddenCategoryIds?.includes(cat.id!) ? <EyeOff size={14} /> : <Eye size={14} />}
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          const hasTransactions = transactions.some(t => t.category === cat.id);
+                                          if (hasTransactions) {
+                                            setCatHasTransactionsNotice(true);
+                                          } else {
+                                            setCatHasTransactionsNotice(false);
+                                          }
+                                          setShowDeleteCatConfirm(cat.id!);
+                                        }}
+                                        className="p-1 text-slate-400 hover:text-red-500 transition-colors ml-0.5"
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                      <div className="flex flex-col bg-slate-100 rounded-md p-0.5 ml-0.5">
+                                        <button
+                                          disabled={index === 0}
+                                          onClick={() => handleMoveCategory(cat.id!, 'up')}
+                                          className="p-0 text-slate-300 hover:text-slate-600 disabled:opacity-20"
+                                        >
+                                          <ChevronUp size={14} />
+                                        </button>
+                                        <button
+                                          disabled={index === filteredCats.length - 1}
+                                          onClick={() => handleMoveCategory(cat.id!, 'down')}
+                                          className="p-0 text-slate-300 hover:text-slate-600 disabled:opacity-20"
+                                        >
+                                          <ChevronDown size={14} />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ));
+                              })()}
+                            </div>
+                          ) : (
+                            <div className="text-center py-4 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                              <p className="text-[10px] text-slate-300 italic">尚未建立自訂分類</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => auth.signOut()}
+                      className="w-full mt-6 group flex items-center justify-center gap-2 py-4 px-6 bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-2xl border border-slate-100 hover:border-red-100 transition-all active:scale-[0.98]"
+                    >
+                      <LogOut size={16} className="transition-transform group-hover:translate-x-0.5" />
+                      <span className="text-sm font-bold tracking-wide">安全登出</span>
+                    </button>
+                  </motion.div>
+                )}
+              </>
             )}
           </AnimatePresence>
         </main>
@@ -2080,9 +2079,9 @@ export default function App() {
             <BarChart3 size={22} strokeWidth={2.5} />
             <span className="text-[9px] font-bold">圖表</span>
           </button>
-          
+
           <div className="flex-1 flex justify-center -mt-8">
-            <button 
+            <button
               onClick={() => setIsAdding(true)}
               className="w-14 h-14 bg-app-primary rounded-full shadow-lg shadow-app-primary/40 flex items-center justify-center text-app-accent active:scale-95 transition-transform"
             >
@@ -2162,21 +2161,21 @@ export default function App() {
             <header className="px-6 pt-5 pb-2 flex items-center justify-between">
               <button onClick={resetEntry} className="text-slate-400 font-bold text-xs uppercase tracking-wider">取消</button>
               <div className="flex bg-slate-100 p-1 rounded-full w-48">
-                <button 
+                <button
                   onClick={() => {
                     setTransactionType("expense");
                     setSelectedCategory("Food");
                   }}
                   className={`flex-1 py-1 text-[9px] font-bold rounded-full transition-all ${transactionType === "expense" ? "bg-white shadow-sm text-red-500" : "text-slate-400"}`}
                 >支出</button>
-                <button 
+                <button
                   onClick={() => {
                     setTransactionType("income");
                     setSelectedCategory("Salary");
                   }}
                   className={`flex-1 py-1 text-[9px] font-bold rounded-full transition-all ${transactionType === "income" ? "bg-white shadow-sm text-emerald-500" : "text-slate-400"}`}
                 >收入</button>
-                <button 
+                <button
                   onClick={() => {
                     setTransactionType("transfer");
                     setSelectedCategory("Others");
@@ -2195,7 +2194,7 @@ export default function App() {
                     <p className="text-center text-xs font-bold text-slate-300 uppercase tracking-widest">從此帳戶轉出</p>
                     <div className="flex flex-wrap justify-center gap-3">
                       {accounts.map(acc => (
-                        <button 
+                        <button
                           key={`from-${acc.id}`}
                           onClick={() => setSelectedAccountId(acc.id!)}
                           className={`px-5 py-3 rounded-2xl text-xs font-bold border transition-all ${selectedAccountId === acc.id ? 'bg-app-primary text-app-accent border-app-primary shadow-lg shadow-app-primary/20 scale-105' : 'bg-slate-50 text-slate-400 border-slate-100 opacity-60'}`}
@@ -2215,7 +2214,7 @@ export default function App() {
                     <p className="text-center text-xs font-bold text-slate-300 uppercase tracking-widest">轉入此帳戶</p>
                     <div className="flex flex-wrap justify-center gap-3">
                       {accounts.map(acc => (
-                        <button 
+                        <button
                           key={`to-${acc.id}`}
                           onClick={() => setSelectedToAccountId(acc.id!)}
                           className={`px-5 py-3 rounded-2xl text-xs font-bold border transition-all ${selectedToAccountId === acc.id ? 'bg-app-primary text-app-accent border-app-primary shadow-lg shadow-app-primary/20 scale-105' : 'bg-slate-50 text-slate-400 border-slate-100 opacity-60'}`}
@@ -2235,33 +2234,33 @@ export default function App() {
                     {getSortedFixedCategories(transactionType)
                       .filter(([id]) => !(profile?.hiddenCategoryIds || []).includes(id))
                       .map(([id, label]) => (
-                      <button 
-                        key={id} 
-                        onClick={() => setSelectedCategory(id)}
-                        className={`flex flex-col items-center gap-1.5 transition-all active:scale-90 ${selectedCategory === id ? "scale-105" : "opacity-80"}`}
-                      >
-                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-lg bg-slate-50 border border-slate-100 ${selectedCategory === id ? "bg-app-primary/10 border-app-primary shadow-sm" : ""}`}>
-                          {getCategoryEmoji(id, customCategories)}
-                        </div>
-                        <span className={`text-[9px] font-bold whitespace-nowrap overflow-hidden text-ellipsis w-full text-center ${selectedCategory === id ? "text-app-primary" : "text-slate-500"}`}>{label}</span>
-                      </button>
-                    ))}
-                    
+                        <button
+                          key={id}
+                          onClick={() => setSelectedCategory(id)}
+                          className={`flex flex-col items-center gap-1.5 transition-all active:scale-90 ${selectedCategory === id ? "scale-105" : "opacity-80"}`}
+                        >
+                          <div className={`w-9 h-9 rounded-full flex items-center justify-center text-lg bg-slate-50 border border-slate-100 ${selectedCategory === id ? "bg-app-primary/10 border-app-primary shadow-sm" : ""}`}>
+                            {getCategoryEmoji(id, customCategories)}
+                          </div>
+                          <span className={`text-[9px] font-bold whitespace-nowrap overflow-hidden text-ellipsis w-full text-center ${selectedCategory === id ? "text-app-primary" : "text-slate-500"}`}>{label}</span>
+                        </button>
+                      ))}
+
                     {/* Custom Categories */}
                     {customCategories
                       .filter(c => c.type === transactionType && !(profile?.hiddenCategoryIds || []).includes(c.id!))
                       .map((cat) => (
-                      <button 
-                        key={cat.id} 
-                        onClick={() => setSelectedCategory(cat.id!)}
-                        className={`flex flex-col items-center gap-1.5 transition-all active:scale-90 ${selectedCategory === cat.id ? "scale-105" : "opacity-80"}`}
-                      >
-                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-lg bg-slate-50 border border-slate-100 ${selectedCategory === cat.id ? "bg-app-primary/10 border-app-primary shadow-sm" : ""}`}>
-                          {cat.emoji}
-                        </div>
-                        <span className={`text-[9px] font-bold whitespace-nowrap overflow-hidden text-ellipsis w-full text-center ${selectedCategory === cat.id ? "text-app-primary" : "text-slate-500"}`}>{cat.name}</span>
-                      </button>
-                    ))}
+                        <button
+                          key={cat.id}
+                          onClick={() => setSelectedCategory(cat.id!)}
+                          className={`flex flex-col items-center gap-1.5 transition-all active:scale-90 ${selectedCategory === cat.id ? "scale-105" : "opacity-80"}`}
+                        >
+                          <div className={`w-9 h-9 rounded-full flex items-center justify-center text-lg bg-slate-50 border border-slate-100 ${selectedCategory === cat.id ? "bg-app-primary/10 border-app-primary shadow-sm" : ""}`}>
+                            {cat.emoji}
+                          </div>
+                          <span className={`text-[9px] font-bold whitespace-nowrap overflow-hidden text-ellipsis w-full text-center ${selectedCategory === cat.id ? "text-app-primary" : "text-slate-500"}`}>{cat.name}</span>
+                        </button>
+                      ))}
                   </div>
                 </>
               )}
@@ -2272,14 +2271,14 @@ export default function App() {
               {/* Account Selector */}
               {transactionType !== "transfer" && (
                 <div className="px-6 py-3 border-b border-slate-50 flex items-center gap-3 overflow-x-auto no-scrollbar">
-                  <button 
+                  <button
                     onClick={() => setSelectedAccountId(null)}
                     className={`flex-shrink-0 px-4 py-2 rounded-2xl text-[10px] font-bold transition-all border ${!selectedAccountId ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 text-slate-400 border-slate-100'}`}
                   >
                     不連動帳戶
                   </button>
                   {accounts.map(acc => (
-                    <button 
+                    <button
                       key={acc.id}
                       onClick={() => setSelectedAccountId(acc.id!)}
                       className={`flex-shrink-0 px-4 py-2 rounded-2xl text-[10px] font-bold transition-all border flex items-center gap-2 ${selectedAccountId === acc.id ? 'bg-app-primary text-app-accent border-app-primary shadow-md shadow-app-primary/20' : 'bg-slate-50 text-slate-400 border-slate-100'}`}
@@ -2295,94 +2294,94 @@ export default function App() {
 
 
               <div className="px-6 py-4 flex items-center justify-between">
-                 {transactionType !== "transfer" ? (
-                   <div className="flex items-center gap-2">
-                     <span className="text-xs font-bold text-slate-400 uppercase">備註:</span>
-                     <input 
-                       type="search"
-                       value={noteValue}
-                       onChange={(e) => setNoteValue(e.target.value)}
-                       placeholder="點擊輸入備註..." 
-                       className="bg-transparent text-sm focus:outline-none"
-                     />
-                   </div>
-                 ) : (
-                   <div className="flex items-center gap-2">
-                     <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">轉帳金額</span>
-                   </div>
-                 )}
-                 <span className="text-3xl font-mono font-bold text-slate-800">
-                   {keypadValue || "0"}
-                 </span>
-               </div>
-               
-               {/* 常用片語 (動態提取) */}
-               {recentPhrases.length > 0 && transactionType !== "transfer" && (
-                 <div className="px-6 pb-3 overflow-x-auto no-scrollbar flex gap-2">
-                   {recentPhrases.map(phrase => (
-                     <button
-                       key={phrase}
-                       onClick={() => setNoteValue(prev => prev ? `${prev} ${phrase}` : phrase)}
-                       className="flex-shrink-0 px-2.5 py-1 bg-slate-50 text-[10px] font-bold text-slate-400 rounded-lg border border-slate-100 active:scale-95 transition-all"
-                     >
-                       {phrase}
-                     </button>
-                   ))}
-                 </div>
-               )}
-               
-               <div className="grid grid-cols-4 border-t border-slate-50">
-                 {["7", "8", "9", "today"].map(key => (
-                   key === "today" ? (
-                     <div 
-                       key={key} 
-                       className="keypad-button flex items-center justify-center gap-1.5 cursor-pointer active:bg-slate-50 transition-colors relative"
-                     >
-                       <Calendar size={18} className="text-app-primary" />
-                        <span className="text-xs font-bold text-slate-600">
-                          {(() => {
-                            const today = new Date().toISOString().split("T")[0];
-                            if (selectedDate === today) return "今日";
-                            const parts = selectedDate.split("-");
-                            return `${parts[1]}/${parts[2]}`;
-                          })()}
-                        </span>
-                        <input 
-                          type="date" 
-                          value={selectedDate}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setSelectedDate(val || new Date().toISOString().split("T")[0]);
-                          }}
-                          className="absolute inset-0 opacity-0 cursor-pointer"
-                        />
-                     </div>
-                   ) : (
-                     <button 
-                       key={key} 
-                       onClick={() => handleKeypadPress(key)} 
-                       className="keypad-button"
-                     >
-                       {key}
-                     </button>
-                   )
-                 ))}
-                 {["4", "5", "6", "+"].map(key => (
-                   <button key={key} onClick={() => handleKeypadPress(key)} className="keypad-button">{key}</button>
-                 ))}
-                 {["1", "2", "3", "-"].map(key => (
-                   <button key={key} onClick={() => handleKeypadPress(key)} className="keypad-button">{key}</button>
-                 ))}
-                 {["0", "00", "del", "done"].map(key => (
-                   <button 
-                     key={key} 
-                     onClick={() => key === "done" ? handleEquals() : handleKeypadPress(key)} 
-                     className={`keypad-button ${key === "done" ? "!bg-yellow-400 !text-slate-900 border-yellow-500 shadow-lg shadow-yellow-400/20" : ""}`}
-                   >
-                     {key === "del" ? <Delete size={20} /> : key === "done" ? "=" : key}
-                   </button>
-                 ))}
-               </div>
+                {transactionType !== "transfer" ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-400 uppercase">備註:</span>
+                    <input
+                      type="search"
+                      value={noteValue}
+                      onChange={(e) => setNoteValue(e.target.value)}
+                      placeholder="點擊輸入備註..."
+                      className="bg-transparent text-sm focus:outline-none"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">轉帳金額</span>
+                  </div>
+                )}
+                <span className="text-3xl font-mono font-bold text-slate-800">
+                  {keypadValue || "0"}
+                </span>
+              </div>
+
+              {/* 常用片語 (動態提取) */}
+              {recentPhrases.length > 0 && transactionType !== "transfer" && (
+                <div className="px-6 pb-3 overflow-x-auto no-scrollbar flex gap-2">
+                  {recentPhrases.map(phrase => (
+                    <button
+                      key={phrase}
+                      onClick={() => setNoteValue(prev => prev ? `${prev} ${phrase}` : phrase)}
+                      className="flex-shrink-0 px-2.5 py-1 bg-slate-50 text-[10px] font-bold text-slate-400 rounded-lg border border-slate-100 active:scale-95 transition-all"
+                    >
+                      {phrase}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="grid grid-cols-4 border-t border-slate-50">
+                {["7", "8", "9", "today"].map(key => (
+                  key === "today" ? (
+                    <div
+                      key={key}
+                      className="keypad-button flex items-center justify-center gap-1.5 cursor-pointer active:bg-slate-50 transition-colors relative"
+                    >
+                      <Calendar size={18} className="text-app-primary" />
+                      <span className="text-xs font-bold text-slate-600">
+                        {(() => {
+                          const today = new Date().toISOString().split("T")[0];
+                          if (selectedDate === today) return "今日";
+                          const parts = selectedDate.split("-");
+                          return `${parts[1]}/${parts[2]}`;
+                        })()}
+                      </span>
+                      <input
+                        type="date"
+                        value={selectedDate}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setSelectedDate(val || new Date().toISOString().split("T")[0]);
+                        }}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                      />
+                    </div>
+                  ) : (
+                    <button
+                      key={key}
+                      onClick={() => handleKeypadPress(key)}
+                      className="keypad-button"
+                    >
+                      {key}
+                    </button>
+                  )
+                ))}
+                {["4", "5", "6", "+"].map(key => (
+                  <button key={key} onClick={() => handleKeypadPress(key)} className="keypad-button">{key}</button>
+                ))}
+                {["1", "2", "3", "-"].map(key => (
+                  <button key={key} onClick={() => handleKeypadPress(key)} className="keypad-button">{key}</button>
+                ))}
+                {["0", "00", "del", "done"].map(key => (
+                  <button
+                    key={key}
+                    onClick={() => key === "done" ? handleEquals() : handleKeypadPress(key)}
+                    className={`keypad-button ${key === "done" ? "!bg-yellow-400 !text-slate-900 border-yellow-500 shadow-lg shadow-yellow-400/20" : ""}`}
+                  >
+                    {key === "del" ? <Delete size={20} /> : key === "done" ? "=" : key}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -2402,7 +2401,7 @@ export default function App() {
                 <h2 className="text-xl font-bold text-slate-800">
                   修改收支紀錄
                 </h2>
-                <button 
+                <button
                   onClick={() => setEditingTransaction(null)}
                   className="p-2 bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
                 >
@@ -2413,11 +2412,11 @@ export default function App() {
               <div className="space-y-5">
                 <div>
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">金額</label>
-                  <input 
+                  <input
                     type="search"
                     inputMode="decimal"
                     value={editingTransaction.amount}
-                    onChange={(e) => setEditingTransaction({...editingTransaction, amount: Number(e.target.value)})}
+                    onChange={(e) => setEditingTransaction({ ...editingTransaction, amount: Number(e.target.value) })}
                     className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-3.5 text-2xl font-mono font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-app-primary/20"
                   />
                 </div>
@@ -2429,50 +2428,48 @@ export default function App() {
                     {getSortedFixedCategories(editingTransaction.type as 'expense' | 'income')
                       .filter(([id]) => !(profile?.hiddenCategoryIds || []).includes(id) || editingTransaction.category === id)
                       .map(([key, label]) => (
-                      <button
-                        key={key}
-                        onClick={() => setEditingTransaction({...editingTransaction, category: key})}
-                        className={`p-2 rounded-xl text-[10px] font-bold transition-all border ${
-                          editingTransaction.category === key 
-                          ? "bg-app-primary text-app-accent border-app-primary shadow-lg shadow-app-primary/20" 
-                          : "bg-white text-slate-400 border-slate-100 hover:border-slate-200"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    ))}
+                        <button
+                          key={key}
+                          onClick={() => setEditingTransaction({ ...editingTransaction, category: key })}
+                          className={`p-2 rounded-xl text-[10px] font-bold transition-all border ${editingTransaction.category === key
+                              ? "bg-app-primary text-app-accent border-app-primary shadow-lg shadow-app-primary/20"
+                              : "bg-white text-slate-400 border-slate-100 hover:border-slate-200"
+                            }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
                     {/* Custom */}
                     {customCategories
                       .filter(c => c.type === editingTransaction.type && (!(profile?.hiddenCategoryIds || []).includes(c.id!) || editingTransaction.category === c.id))
                       .map((cat) => (
-                      <button
-                        key={cat.id}
-                        onClick={() => setEditingTransaction({...editingTransaction, category: cat.id!})}
-                        className={`p-2 rounded-xl text-[10px] font-bold transition-all border ${
-                          editingTransaction.category === cat.id 
-                          ? "bg-app-primary text-app-accent border-app-primary shadow-lg shadow-app-primary/20" 
-                          : "bg-white text-slate-400 border-slate-100 hover:border-slate-200"
-                        }`}
-                      >
-                        {cat.name}
-                      </button>
-                    ))}
+                        <button
+                          key={cat.id}
+                          onClick={() => setEditingTransaction({ ...editingTransaction, category: cat.id! })}
+                          className={`p-2 rounded-xl text-[10px] font-bold transition-all border ${editingTransaction.category === cat.id
+                              ? "bg-app-primary text-app-accent border-app-primary shadow-lg shadow-app-primary/20"
+                              : "bg-white text-slate-400 border-slate-100 hover:border-slate-200"
+                            }`}
+                        >
+                          {cat.name}
+                        </button>
+                      ))}
                   </div>
                 </div>
 
                 <div>
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">連動帳戶</label>
                   <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                    <button 
-                      onClick={() => setEditingTransaction({...editingTransaction, accountId: undefined})}
+                    <button
+                      onClick={() => setEditingTransaction({ ...editingTransaction, accountId: undefined })}
                       className={`flex-shrink-0 px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${!editingTransaction.accountId ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 text-slate-400 border-slate-100'}`}
                     >
                       不連動
                     </button>
                     {accounts.map(acc => (
-                      <button 
+                      <button
                         key={acc.id}
-                        onClick={() => setEditingTransaction({...editingTransaction, accountId: acc.id})}
+                        onClick={() => setEditingTransaction({ ...editingTransaction, accountId: acc.id })}
                         className={`flex-shrink-0 px-4 py-2 rounded-xl text-[10px] font-bold border flex items-center gap-2 transition-all ${editingTransaction.accountId === acc.id ? 'bg-app-primary text-app-accent border-app-primary shadow-md shadow-app-primary/20' : 'bg-slate-50 text-slate-400 border-slate-100'}`}
                         style={editingTransaction.accountId === acc.id ? { backgroundColor: acc.color, color: '#fff', borderColor: acc.color } : {}}
                       >
@@ -2485,10 +2482,10 @@ export default function App() {
 
                 <div>
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">備註</label>
-                  <input 
+                  <input
                     type="search"
                     value={editingTransaction.note}
-                    onChange={(e) => setEditingTransaction({...editingTransaction, note: e.target.value})}
+                    onChange={(e) => setEditingTransaction({ ...editingTransaction, note: e.target.value })}
                     placeholder="寫點什麼..."
                     className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-3 text-sm text-slate-600 focus:outline-none"
                   />
@@ -2497,15 +2494,14 @@ export default function App() {
                 <div className="flex gap-3 pt-2">
                   <button
                     onClick={() => {
-                      const nextType: TransactionType = 
+                      const nextType: TransactionType =
                         editingTransaction.type === "expense" ? "income" : "expense";
-                      setEditingTransaction({...editingTransaction, type: nextType});
+                      setEditingTransaction({ ...editingTransaction, type: nextType });
                     }}
-                    className={`flex-1 py-2.5 px-4 rounded-2xl font-bold transition-all border ${
-                      editingTransaction.type === "income"
-                      ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                      : "bg-red-50 text-red-600 border-red-100"
-                    }`}
+                    className={`flex-1 py-2.5 px-4 rounded-2xl font-bold transition-all border ${editingTransaction.type === "income"
+                        ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                        : "bg-red-50 text-red-600 border-red-100"
+                      }`}
                   >
                     {editingTransaction.type === "income" ? "💰 收入" : "💸 支出"}
                   </button>
@@ -2521,19 +2517,19 @@ export default function App() {
           </div>
         )}
       </AnimatePresence>
-  
+
       {/* Edit Account Modal */}
       <AnimatePresence>
         {editingAccount && (
           <div className="fixed inset-0 z-[70] flex items-center justify-center p-6">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setEditingAccount(null)}
               className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -2554,8 +2550,8 @@ export default function App() {
                 <div className="space-y-4">
                   <div>
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">銀行名稱</label>
-                    <input 
-                      type="search" 
+                    <input
+                      type="search"
                       value={newBankName}
                       onChange={(e) => setNewBankName(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-app-primary/20 transition-all"
@@ -2564,8 +2560,8 @@ export default function App() {
                   </div>
                   <div>
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">自訂帳戶名稱</label>
-                    <input 
-                      type="search" 
+                    <input
+                      type="search"
                       value={newAccountName}
                       onChange={(e) => setNewAccountName(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-app-primary/20 transition-all"
@@ -2574,8 +2570,8 @@ export default function App() {
                   </div>
                   <div>
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">帳戶餘額</label>
-                    <input 
-                      type="search" 
+                    <input
+                      type="search"
                       inputMode="decimal"
                       value={newBalance}
                       onChange={(e) => setNewBalance(e.target.value)}
@@ -2587,7 +2583,7 @@ export default function App() {
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">標記顏色</label>
                     <div className="flex gap-2">
                       {["#fcd34d", "#fb7185", "#38bdf8", "#34d399", "#818cf8", "#f472b6"].map(color => (
-                        <button 
+                        <button
                           key={color}
                           onClick={() => setNewAccountColor(color)}
                           className={`w-8 h-8 rounded-full transition-all border-2 ${newAccountColor === color ? "border-slate-800 scale-110" : "border-transparent"}`}
@@ -2598,7 +2594,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <button 
+                <button
                   onClick={() => {
                     const balance = parseFloat(newBalance);
                     if (newBankName && !isNaN(balance) && editingAccount.id) {
@@ -2620,7 +2616,7 @@ export default function App() {
       <AnimatePresence>
         {showSearchModal && (
           <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-sm">
-            <motion.div 
+            <motion.div
               initial={{ y: "100%", opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: "100%", opacity: 0 }}
@@ -2628,7 +2624,7 @@ export default function App() {
             >
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-slate-800">明細查詢</h2>
-                <button 
+                <button
                   onClick={() => setShowSearchModal(false)}
                   className="w-10 h-10 flex items-center justify-center bg-slate-100 rounded-full"
                 >
@@ -2654,14 +2650,14 @@ export default function App() {
 
               {/* Date Pickers - Single Row, No Labels */}
               <div className="mb-5 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-2 bg-slate-50 rounded-2xl border border-slate-100">
-                <input 
+                <input
                   type="date"
                   value={searchStartDate}
                   onChange={(e) => setSearchStartDate(e.target.value)}
                   className="bg-transparent text-[11px] font-bold text-slate-600 outline-none w-full text-center"
                 />
                 <div className="w-px h-3 bg-slate-200" />
-                <input 
+                <input
                   type="date"
                   value={searchEndDate}
                   onChange={(e) => setSearchEndDate(e.target.value)}
@@ -2680,9 +2676,9 @@ export default function App() {
                   const filtered = transactions.filter(t => {
                     const d = getSafeDate(t.timestamp);
                     const isInRange = d >= sD && d <= eD;
-                    
+
                     if (!isInRange) return false;
-                    
+
                     // Fuzzy keyword check
                     return t.note && t.note.toLowerCase().includes(searchKeyword.toLowerCase());
                   }).sort((a, b) => {
@@ -2703,8 +2699,8 @@ export default function App() {
                   return (
                     <div className="space-y-1.5 pb-8">
                       {filtered.map(t => (
-                        <div 
-                          key={t.id} 
+                        <div
+                          key={t.id}
                           onClick={() => {
                             setEditingTransaction(t);
                             setShowSearchModal(false);
@@ -2750,14 +2746,14 @@ export default function App() {
       <AnimatePresence>
         {showAddAccount && (
           <div className="fixed inset-0 z-[70] flex items-center justify-center p-6">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowAddAccount(false)}
               className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -2778,8 +2774,8 @@ export default function App() {
                 <div className="space-y-4">
                   <div>
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">銀行名稱 (如: 國泰, 富邦...)</label>
-                    <input 
-                      type="search" 
+                    <input
+                      type="search"
                       value={newBankName}
                       onChange={(e) => setNewBankName(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-app-primary/20 transition-all"
@@ -2788,8 +2784,8 @@ export default function App() {
                   </div>
                   <div>
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">自訂帳戶名稱 (選填)</label>
-                    <input 
-                      type="search" 
+                    <input
+                      type="search"
                       value={newAccountName}
                       onChange={(e) => setNewAccountName(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-app-primary/20 transition-all"
@@ -2798,8 +2794,8 @@ export default function App() {
                   </div>
                   <div>
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">目前的餘額 (金額)</label>
-                    <input 
-                      type="search" 
+                    <input
+                      type="search"
                       inputMode="decimal"
                       value={newBalance}
                       onChange={(e) => setNewBalance(e.target.value)}
@@ -2811,7 +2807,7 @@ export default function App() {
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">標記顏色</label>
                     <div className="flex gap-2">
                       {["#fcd34d", "#fb7185", "#38bdf8", "#34d399", "#818cf8", "#f472b6"].map(color => (
-                        <button 
+                        <button
                           key={color}
                           onClick={() => setNewAccountColor(color)}
                           className={`w-8 h-8 rounded-full transition-all border-2 ${newAccountColor === color ? "border-slate-800 scale-110" : "border-transparent"}`}
@@ -2822,7 +2818,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <button 
+                <button
                   onClick={() => {
                     const balance = parseFloat(newBalance);
                     if (newBankName && !isNaN(balance)) {
@@ -2845,14 +2841,14 @@ export default function App() {
       <AnimatePresence>
         {showDeleteConfirm && (
           <div className="fixed inset-0 z-[80] flex items-center justify-center p-6">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowDeleteConfirm(null)}
               className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -2867,13 +2863,13 @@ export default function App() {
                   <p className="text-sm text-slate-400 mt-2">刪除後將無法恢復，且相關連動功能可能會受影響。</p>
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <button 
+                  <button
                     onClick={() => setShowDeleteConfirm(null)}
                     className="flex-1 bg-slate-100 text-slate-400 font-bold py-4 rounded-2xl active:scale-95 transition-all"
                   >
                     取消
                   </button>
-                  <button 
+                  <button
                     onClick={async () => {
                       await handleDeleteAccount(showDeleteConfirm);
                       setShowDeleteConfirm(null);
@@ -2893,7 +2889,7 @@ export default function App() {
       <AnimatePresence>
         {showDeleteCatConfirm && (
           <div className="fixed inset-0 z-[80] flex items-center justify-center p-6">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -2903,7 +2899,7 @@ export default function App() {
               }}
               className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -2918,13 +2914,13 @@ export default function App() {
                     {catHasTransactionsNotice ? "無法刪除此分類" : "確定要刪除此分類嗎？"}
                   </h3>
                   <p className="text-sm text-slate-400 mt-2">
-                    {catHasTransactionsNotice 
-                      ? "此分類尚有交易紀錄，為了維護帳目正確，請先更改或刪除相關交易後再進行刪除。" 
+                    {catHasTransactionsNotice
+                      ? "此分類尚有交易紀錄，為了維護帳目正確，請先更改或刪除相關交易後再進行刪除。"
                       : "刪除後將無法恢復，且現有的交易紀錄若使用此分類將顯示為未知。"}
                   </p>
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <button 
+                  <button
                     onClick={() => {
                       setShowDeleteCatConfirm(null);
                       setCatHasTransactionsNotice(false);
@@ -2934,7 +2930,7 @@ export default function App() {
                     {catHasTransactionsNotice ? "我了解了" : "取消"}
                   </button>
                   {!catHasTransactionsNotice && (
-                    <button 
+                    <button
                       onClick={async () => {
                         if (showDeleteCatConfirm) {
                           await handleDeleteCustomCategory(showDeleteCatConfirm);
@@ -2958,14 +2954,14 @@ export default function App() {
       <AnimatePresence>
         {showAddCategory && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowAddCategory(null)}
               className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -2989,14 +2985,14 @@ export default function App() {
                   <div className="space-y-3">
                     <div>
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">圖示 Emoji</label>
-                      <input 
-                        type="search" 
+                      <input
+                        type="search"
                         value={newCatEmoji}
                         onChange={(e) => setNewCatEmoji(e.target.value)}
                         className="w-full bg-slate-50 border border-slate-100 p-3 rounded-2xl text-center text-2xl focus:ring-2 focus:ring-app-primary/20 outline-none transition-all"
                         placeholder="請輸入一個 Emoji"
                       />
-                      
+
                       <div className="mt-3 flex flex-wrap gap-2 justify-center max-h-32 overflow-y-auto p-1.5 bg-slate-50/50 rounded-2xl border border-slate-100/50">
                         {[
                           "🍔", "🍜", "☕", "🍺", "🍦", "🍎",
@@ -3006,7 +3002,7 @@ export default function App() {
                           "💰", "💳", "📈", "💻", "🏢", "📧",
                           "✨", "🏮", "🎈", "🐱", "🐶", "🌺"
                         ].map(emoji => (
-                          <button 
+                          <button
                             key={emoji}
                             type="button"
                             onClick={() => setNewCatEmoji(emoji)}
@@ -3019,8 +3015,8 @@ export default function App() {
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">分類名稱</label>
-                      <input 
-                        type="search" 
+                      <input
+                        type="search"
                         value={newCatName}
                         onChange={(e) => setNewCatName(e.target.value)}
                         className="w-full bg-slate-50 border border-slate-100 p-3 rounded-2xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-app-primary/20 outline-none transition-all placeholder:text-slate-300"
@@ -3030,7 +3026,7 @@ export default function App() {
                     </div>
                   </div>
 
-                  <button 
+                  <button
                     onClick={() => {
                       if (newCatName && newCatEmoji) {
                         handleAddCustomCategory(newCatName, newCatEmoji, showAddCategory);
@@ -3052,14 +3048,14 @@ export default function App() {
       <AnimatePresence>
         {showCashTransfer && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowCashTransfer(null)}
               className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -3093,8 +3089,8 @@ export default function App() {
                 <div className="w-full space-y-4">
                   <div>
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">輸入金額</label>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       inputMode="decimal"
                       value={cashTransferAmount}
                       onChange={(e) => setCashTransferAmount(e.target.value)}
@@ -3105,13 +3101,13 @@ export default function App() {
                   </div>
 
                   <div className="flex gap-3">
-                    <button 
+                    <button
                       onClick={() => setShowCashTransfer(null)}
                       className="flex-1 font-bold py-4 rounded-2xl bg-slate-100 text-slate-400 active:scale-95 transition-all text-sm"
                     >
                       取消
                     </button>
-                    <button 
+                    <button
                       onClick={handleCashTransfer}
                       className="flex-1 bg-app-primary text-app-accent font-bold py-4 rounded-2xl shadow-lg shadow-app-primary/20 active:scale-95 transition-all text-sm"
                     >

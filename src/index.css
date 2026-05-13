@@ -17,6 +17,16 @@
 @layer base {
   body {
     @apply bg-slate-50 text-app-text-primary font-sans selection:bg-app-primary/30 overflow-hidden;
+    /* Mobile improvements */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    user-select: none;
+    overscroll-behavior-y: none;
+  }
+
+  /* Allow text selection in inputs/textareas only */
+  input, textarea {
+    user-select: text;
   }
 
   h1, h2, h3, h4 {

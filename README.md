@@ -1,20 +1,42 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Pudding Wallet
 
-# Run and deploy your AI Studio app
+This is a React project bootstrapped with Vite.
 
-This contains everything you need to run your app locally.
+## Setup
 
-View your app in AI Studio: https://ai.studio/apps/a7ab40dc-7ccd-4062-8048-d311611eb5dc
+1. Make sure you have Node.js installed.
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Copy `.env.example` to `.env` and fill in any required variables.
 
-## Run Locally
+## Running Locally
 
-**Prerequisites:**  Node.js
+To start the development server:
 
+```bash
+npm run dev
+```
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+The app will be available at `http://localhost:3000`.
+
+## Scripts
+
+- `npm run dev`: Start development server
+- `npm run build`: Build for production
+- `npm run preview`: Preview production build
+- `npm run lint`: Type check with TypeScript
+
+## Deployment
+
+This project is configured with a GitHub Action to automatically deploy to GitHub Pages when pushing to the `main` or `master` branch.
+
+The workflow file is located at `.github/workflows/deploy.yml`. Make sure to enable GitHub Pages in your repository settings (Settings -> Pages -> Build and deployment source: GitHub Actions).
+
+## Ignore Files
+A `.gitignore` is provided to keep the repository clean from:
+- `node_modules/` and build directories (`dist/`, `build/`)
+- Temporary cache or logs
+- IDE configurations (like `.idea`, mostly `.vscode` is ignored except specific shared configs)
+- Environment variable files (`.env`, `.env.local`, etc. - except `.env.example`)
