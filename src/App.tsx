@@ -2122,7 +2122,9 @@ export default function App() {
                     <span className="text-2xl">{getCategoryEmoji(showDeleteTransactionConfirm.category, customCategories)}</span>
                     <div className="text-left">
                       <p className="text-xs font-bold text-slate-700">{getCategoryDisplayName(showDeleteTransactionConfirm.category, showDeleteTransactionConfirm.type)}</p>
-                      <p className="text-[10px] text-slate-400">{showDeleteTransactionConfirm.note || "無備註"}</p>
+                      {showDeleteTransactionConfirm.note && (
+                        <p className="text-[10px] text-slate-400">{showDeleteTransactionConfirm.note}</p>
+                      )}
                     </div>
                   </div>
                   <p className={`font-mono font-bold ${showDeleteTransactionConfirm.type === 'income' ? 'text-emerald-500' : 'text-slate-800'}`}>
