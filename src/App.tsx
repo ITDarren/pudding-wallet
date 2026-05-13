@@ -2070,7 +2070,8 @@ export default function App() {
         </main>
 
         {/* Bottom Navigation */}
-        <nav className="h-16 bg-white border-t border-slate-50 flex items-center justify-between px-2 z-20 shadow-[0_-10px_30px_rgba(0,0,0,0.03)]">
+        <nav className="pb-[env(safe-area-inset-bottom)] bg-white border-t border-slate-50 z-20 shadow-[0_-10px_30px_rgba(0,0,0,0.03)]">
+          <div className="h-16 flex items-center justify-between px-2 w-full">
           <button onClick={() => handleTabChange("history")} className={`nav-item ${activeTab === "history" ? "nav-item-active" : ""}`}>
             <History size={22} strokeWidth={2.5} />
             <span className="text-[9px] font-bold">明細</span>
@@ -2097,6 +2098,7 @@ export default function App() {
             <UserIcon size={22} strokeWidth={2.5} />
             <span className="text-[9px] font-bold">我的</span>
           </button>
+          </div>
         </nav>
       </div>
 
