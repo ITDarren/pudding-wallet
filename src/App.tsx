@@ -1117,7 +1117,7 @@ export default function App() {
   }
 
   return (
-    <div className="h-screen bg-slate-50 flex flex-col items-center">
+    <div className="h-[100dvh] bg-slate-50 flex flex-col items-center">
       {/* Mobile-centric Container */}
       <div className="w-full max-w-md h-full bg-white shadow-xl shadow-slate-200 flex flex-col relative overflow-hidden">
         <AnimatePresence>
@@ -2070,33 +2070,35 @@ export default function App() {
         </main>
 
         {/* Bottom Navigation */}
-        <nav className="h-[calc(5rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] bg-white border-t border-slate-50 flex items-center justify-between px-2 z-20 shadow-[0_-10px_30px_rgba(0,0,0,0.03)]">
-          <button onClick={() => handleTabChange("history")} className={`nav-item ${activeTab === "history" ? "nav-item-active" : ""}`}>
-            <History size={22} strokeWidth={2.5} />
-            <span className="text-[9px] font-bold">明細</span>
-          </button>
-          <button onClick={() => handleTabChange("stats")} className={`nav-item ${activeTab === "stats" ? "nav-item-active" : ""}`}>
-            <BarChart3 size={22} strokeWidth={2.5} />
-            <span className="text-[9px] font-bold">圖表</span>
-          </button>
+        <nav className="pb-[env(safe-area-inset-bottom)] bg-white border-t border-slate-50 z-20 shadow-[0_-10px_30px_rgba(0,0,0,0.03)]">
+          <div className="h-16 flex items-center justify-between px-2 w-full">
+            <button onClick={() => handleTabChange("history")} className={`nav-item ${activeTab === "history" ? "nav-item-active" : ""}`}>
+              <History size={22} strokeWidth={2.5} />
+              <span className="text-[9px] font-bold">明細</span>
+            </button>
+            <button onClick={() => handleTabChange("stats")} className={`nav-item ${activeTab === "stats" ? "nav-item-active" : ""}`}>
+              <BarChart3 size={22} strokeWidth={2.5} />
+              <span className="text-[9px] font-bold">圖表</span>
+            </button>
 
-          <div className="flex-1 flex justify-center -mt-8">
-            <button
-              onClick={() => setIsAdding(true)}
-              className="w-14 h-14 bg-app-primary rounded-full shadow-lg shadow-app-primary/40 flex items-center justify-center text-app-accent active:scale-95 transition-transform"
-            >
-              <Plus size={28} strokeWidth={3} />
+            <div className="flex-1 flex justify-center -mt-8">
+              <button
+                onClick={() => setIsAdding(true)}
+                className="w-14 h-14 bg-app-primary rounded-full shadow-lg shadow-app-primary/40 flex items-center justify-center text-app-accent active:scale-95 transition-transform"
+              >
+                <Plus size={28} strokeWidth={3} />
+              </button>
+            </div>
+
+            <button onClick={() => handleTabChange("accounts")} className={`nav-item ${activeTab === "accounts" ? "nav-item-active" : ""}`}>
+              <ClipboardList size={22} strokeWidth={2.5} />
+              <span className="text-[9px] font-bold">帳戶</span>
+            </button>
+            <button onClick={() => handleTabChange("profile")} className={`nav-item ${activeTab === "profile" ? "nav-item-active" : ""}`}>
+              <UserIcon size={22} strokeWidth={2.5} />
+              <span className="text-[9px] font-bold">我的</span>
             </button>
           </div>
-
-          <button onClick={() => handleTabChange("accounts")} className={`nav-item ${activeTab === "accounts" ? "nav-item-active" : ""}`}>
-            <ClipboardList size={22} strokeWidth={2.5} />
-            <span className="text-[9px] font-bold">帳戶</span>
-          </button>
-          <button onClick={() => handleTabChange("profile")} className={`nav-item ${activeTab === "profile" ? "nav-item-active" : ""}`}>
-            <UserIcon size={22} strokeWidth={2.5} />
-            <span className="text-[9px] font-bold">我的</span>
-          </button>
         </nav>
       </div>
 
