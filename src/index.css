@@ -1,0 +1,49 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cinzel:wght@400;700&family=JetBrains+Mono:wght@400&display=swap');
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Inter", serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-app-bg: #ffffff;
+  --color-app-primary: #ffcc00;
+  --color-app-accent: #333333;
+  --color-app-text-primary: #333333;
+  --color-app-text-secondary: #666666;
+  --color-app-text-muted: #999999;
+}
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-app-text-primary font-sans selection:bg-app-primary/30 overflow-hidden;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-sans tracking-tight font-bold;
+  }
+}
+
+.app-header {
+  @apply bg-app-primary text-app-accent p-5 pb-8 rounded-b-[2rem] shadow-lg shadow-app-primary/20;
+}
+
+.nav-item {
+  @apply flex flex-col items-center justify-center gap-1 text-slate-400 transition-colors py-2 flex-1;
+}
+
+.nav-item-active {
+  @apply text-app-primary;
+}
+
+.keypad-button {
+  @apply h-14 flex items-center justify-center bg-white active:bg-slate-100 border-r border-b border-slate-50 text-xl font-medium transition-colors;
+}
+
+.category-chip {
+  @apply flex flex-col items-center gap-2 p-3 rounded-2xl border border-transparent transition-all;
+}
+
+.category-chip-active {
+  @apply bg-app-primary/10 border-app-primary text-app-primary;
+}

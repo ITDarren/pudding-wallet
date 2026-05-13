@@ -1,0 +1,85 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Profile for the ledger user.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "balance": { "type": "number", "description": "Current total balance" },
+        "lastActive": { "type": "string", "format": "date-time" },
+        "isGlobalHidden": { "type": "boolean" },
+        "hiddenAccountIds": { 
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "hiddenCategoryIds": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["uid", "displayName", "balance", "lastActive"]
+    },
+    "Transaction": {
+      "title": "Bank Transaction",
+      "description": "An entry in the ledger representing an expense or income.",
+      "type": "object",
+      "properties": {
+        "amount": { "type": "number" },
+        "type": { "type": "string", "enum": ["expense", "income"] },
+        "category": { "type": "string" },
+        "note": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "accountId": { "type": "string" }
+      },
+      "required": ["amount", "type", "category", "timestamp"]
+    },
+    "Category": {
+      "title": "Custom Category",
+      "description": "User defined category for transactions.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "emoji": { "type": "string" },
+        "type": { "type": "string", "enum": ["expense", "income"] },
+        "order": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "emoji", "type", "order", "createdAt"]
+    },
+    "BankAccount": {
+      "title": "Bank Account",
+      "description": "User's bank account for tracking balances.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "bankName": { "type": "string" },
+        "balance": { "type": "number" },
+        "color": { "type": "string" },
+        "order": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "bankName", "balance", "color", "order", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Contains user profile and stats."
+    },
+    "/users/{userId}/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "The ledger entries for the user."
+    },
+    "/users/{userId}/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Custom categories defined by the user."
+    },
+    "/users/{userId}/accounts/{accountId}": {
+      "schema": "BankAccount",
+      "description": "User's financial accounts."
+    }
+  }
+}

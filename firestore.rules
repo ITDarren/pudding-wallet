@@ -1,0 +1,107 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- GLOBAL HELPERS ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- USER PROFILE VALIDATION ---
+    function isValidUser(data) {
+      return data.uid == request.auth.uid &&
+             (data.keys().hasAny(['displayName']) ? (data.displayName is string && data.displayName.size() <= 100) : true) &&
+             (data.keys().hasAny(['balance']) ? data.balance is number : true) &&
+             (data.keys().hasAny(['lastActive']) ? data.lastActive is timestamp : true);
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming());
+      allow list: if false; // Users shouldn't be listable normally in this app
+
+      // --- CATEGORIES SUB-COLLECTION ---
+      match /categories/{categoryId} {
+        function isValidCategory(data) {
+          return data.name is string &&
+                 data.emoji is string &&
+                 data.type in ['expense', 'income'] &&
+                 (data.keys().hasAny(['order']) ? data.order is number : true) &&
+                 (data.keys().hasAny(['createdAt']) ? data.createdAt is timestamp : true);
+        }
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidCategory(incoming());
+        allow update: if isOwner(userId) && isValidCategory(incoming()) && (
+          // Allow reordering (swapping order field)
+          incoming().diff(existing()).affectedKeys().hasOnly(['order']) ||
+          // Allow full updates if we want to support editing in future (currently just reordering)
+          incoming().diff(existing()).affectedKeys().size() > 0
+        );
+        allow delete: if isOwner(userId);
+      }
+
+      // --- ACCOUNTS SUB-COLLECTION ---
+      match /accounts/{accountId} {
+        function isValidAccount(data) {
+          return (data.keys().hasAny(['name']) ? (data.name is string && data.name.size() <= 100) : true) &&
+                 (data.keys().hasAny(['bankName']) ? (data.bankName is string && data.bankName.size() <= 100) : true) &&
+                 (data.keys().hasAny(['balance']) ? data.balance is number : true) &&
+                 (data.keys().hasAny(['color']) ? data.color is string : true) &&
+                 (data.keys().hasAny(['order']) ? data.order is number : true) &&
+                 (data.keys().hasAny(['createdAt']) ? data.createdAt is timestamp : true);
+        }
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidAccount(incoming());
+        allow update: if isOwner(userId) && isValidAccount(incoming());
+        allow delete: if isOwner(userId);
+      }
+
+      // --- TRANSACTIONS SUB-COLLECTION ---
+      match /transactions/{transactionId} {
+        function isValidTransaction(data) {
+          return data.amount is number &&
+                 data.type in ['expense', 'income', 'transfer'] &&
+                 data.category is string &&
+                 data.timestamp is timestamp &&
+                 (data.keys().hasAny(['note']) ? (data.note == null || data.note is string) : true) &&
+                 (data.keys().hasAny(['accountId']) ? (data.accountId == null || data.accountId is string) : true) &&
+                 (data.keys().hasAny(['toAccountId']) ? (data.toAccountId == null || data.toAccountId is string) : true) &&
+                 (data.keys().hasAny(['createdAt']) ? data.createdAt is timestamp : true);
+        }
+
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId);
+
+        allow create: if isOwner(userId) && isValidTransaction(incoming());
+
+        allow update: if isOwner(userId) && (
+          // Use basic validation for the resulting doc
+          isValidTransaction(incoming())
+        );
+
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}
