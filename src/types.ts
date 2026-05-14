@@ -53,30 +53,30 @@ export interface BankAccount {
 }
 
 export const EXPENSE_CATEGORIES: Record<string, string> = {
-  "Food": "餐飲美食",
-  "Shopping": "購物消費",
-  "Transport": "交通出行",
-  "Bills": "居家生活",
-  "Health": "醫療健康",
-  "Entertainment": "休閒娛樂",
-  "Mobile": "通訊通訊",
-  "Social": "社交活動",
+  "Food": "餐飲",
+  "Shopping": "日常購物",
+  "Transport": "交通",
+  "Social": "社交人情",
+  "Bills": "生活帳單",
+  "Living": "居家生活",
+  "Beauty": "美容保養",
+  "Entertainment": "娛樂休閒",
+  "Travel": "旅遊",
+  "Home": "家居裝修",
   "Repair": "維修保養",
-  "Pet": "寵物生活",
-  "Beauty": "美容彩妝",
-  "Home": "居家裝修",
-  "Travel": "旅行出遊",
-  "Education": "進修教育",
-  "Others": "其他雜項"
+  "Health": "醫療保健",
+  "Pet": "寵物",
+  "Education": "教育進修",
+  "Others": "其他"
 };
 
 export const INCOME_CATEGORIES: Record<string, string> = {
-  "Salary": "薪資收入",
-  "Bonus": "獎金回饋",
-  "Investment": "投資收益",
-  "SideHustle": "兼職外快",
-  "Gift": "收到禮金",
-  "Others": "其他收入"
+  "Salary": "薪資",
+  "Bonus": "獎金",
+  "Investment": "投資收入",
+  "SideHustle": "兼職收入",
+  "Gift": "禮金收入",
+  "Others": "其他"
 };
 
 export const CATEGORIES: Record<string, string> = {

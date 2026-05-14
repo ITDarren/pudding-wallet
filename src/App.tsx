@@ -161,16 +161,16 @@ const getCategoryEmoji = (category: string, customCategories: CustomCategory[] =
     "Food": "🍔",
     "Shopping": "🛍️",
     "Transport": "🚗",
-    "Bills": "🏠",
-    "Health": "🏥",
-    "Entertainment": "🎮",
-    "Mobile": "📱",
     "Social": "👥",
-    "Repair": "🔧",
-    "Pet": "🐱",
+    "Bills": "📄",
+    "Living": "🧻",
     "Beauty": "💄",
-    "Home": "🏘️",
+    "Entertainment": "🎮",
     "Travel": "✈️",
+    "Home": "🏘️",
+    "Repair": "🔧",
+    "Health": "🏥",
+    "Pet": "🐱",
     "Education": "📚",
     "Income": "💰",
     "Salary": "💵",
@@ -1894,7 +1894,7 @@ export default function App() {
                           const cashBalance = profile?.cashBalance ?? ((profile?.balance || 0) - totalAccountBalance);
                           return (
                             <span className={`text-xl font-mono font-bold ${cashBalance < 0 ? 'text-red-500' : 'text-emerald-500'}`}>
-                              {isGlobalHidden ? "****" : cashBalance.toLocaleString()}
+                              {cashBalance.toLocaleString()}
                             </span>
                           );
                         })()}
