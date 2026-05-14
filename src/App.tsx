@@ -2055,6 +2055,38 @@ export default function App() {
                       </div>
                     </div>
 
+                    {/* 「+」 頁面佈局設定 */}
+                    <div className="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm space-y-4">
+                      <div className="space-y-1">
+                        <h3 className="text-sm font-bold text-slate-800">「+」 頁面佈局設定</h3>
+                        <p className="text-[10px] text-slate-400 font-medium">減少列數可放大分類圖示</p>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-600">每列顯示圖示數量</span>
+                        <div className="flex bg-slate-50 p-1 rounded-xl">
+                          {[3, 4, 5, 6].map((num) => (
+                            <button
+                              key={num}
+                              onClick={async () => {
+                                if (user) {
+                                  await updateDoc(doc(db, "users", user.uid), {
+                                    categoryColumns: num
+                                  });
+                                }
+                              }}
+                              className={`w-10 py-1.5 text-xs font-mono font-bold rounded-lg transition-all ${(profile?.categoryColumns || 6) === num
+                                  ? "bg-white shadow-sm text-app-primary scale-105"
+                                  : "text-slate-400 hover:text-slate-600"
+                                }`}
+                            >
+                              {num}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
                     <button
                       onClick={() => auth.signOut()}
                       className="w-full mt-6 group flex items-center justify-center gap-2 py-4 px-6 bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-2xl border border-slate-100 hover:border-red-100 transition-all active:scale-[0.98]"
@@ -2233,7 +2265,10 @@ export default function App() {
               ) : (
                 <>
                   {/* Category Grid */}
-                  <div className="grid grid-cols-6 gap-x-1 gap-y-4 pb-12">
+                  <div className={`grid gap-x-1 gap-y-6 pb-12 ${(profile?.categoryColumns === 3) ? "grid-cols-3" :
+                      (profile?.categoryColumns === 4) ? "grid-cols-4" :
+                        (profile?.categoryColumns === 5) ? "grid-cols-5" : "grid-cols-6"
+                    }`}>
                     {/* Built-in Categories */}
                     {getSortedFixedCategories(transactionType)
                       .filter(([id]) => !(profile?.hiddenCategoryIds || []).includes(id))
@@ -2241,12 +2276,19 @@ export default function App() {
                         <button
                           key={id}
                           onClick={() => setSelectedCategory(id)}
-                          className={`flex flex-col items-center gap-1.5 transition-all active:scale-90 ${selectedCategory === id ? "scale-105" : "opacity-80"}`}
+                          className={`flex flex-col items-center gap-2 transition-all active:scale-90 ${selectedCategory === id ? "scale-105" : "opacity-80"}`}
                         >
-                          <div className={`w-9 h-9 rounded-full flex items-center justify-center text-lg bg-slate-50 border border-slate-100 ${selectedCategory === id ? "bg-app-primary/10 border-app-primary shadow-sm" : ""}`}>
+                          <div className={`rounded-full flex items-center justify-center bg-slate-50 border border-slate-100 transition-all ${selectedCategory === id ? "bg-app-primary/10 border-app-primary shadow-sm" : ""
+                            } ${(profile?.categoryColumns === 3) ? "w-16 h-16 text-3xl" :
+                              (profile?.categoryColumns === 4) ? "w-13 h-13 text-2xl" :
+                                (profile?.categoryColumns === 5) ? "w-11 h-11 text-xl" : "w-9 h-9 text-lg"
+                            }`}>
                             {getCategoryEmoji(id, customCategories)}
                           </div>
-                          <span className={`text-[9px] font-bold whitespace-nowrap overflow-hidden text-ellipsis w-full text-center ${selectedCategory === id ? "text-app-primary" : "text-slate-500"}`}>{label}</span>
+                          <span className={`font-bold whitespace-nowrap overflow-hidden text-ellipsis w-full text-center ${selectedCategory === id ? "text-app-primary" : "text-slate-500"
+                            } ${(profile?.categoryColumns === 3) ? "text-[11px]" :
+                              (profile?.categoryColumns === 4) ? "text-[10px]" : "text-[9px]"
+                            }`}>{label}</span>
                         </button>
                       ))}
 
@@ -2257,12 +2299,19 @@ export default function App() {
                         <button
                           key={cat.id}
                           onClick={() => setSelectedCategory(cat.id!)}
-                          className={`flex flex-col items-center gap-1.5 transition-all active:scale-90 ${selectedCategory === cat.id ? "scale-105" : "opacity-80"}`}
+                          className={`flex flex-col items-center gap-2 transition-all active:scale-90 ${selectedCategory === cat.id ? "scale-105" : "opacity-80"}`}
                         >
-                          <div className={`w-9 h-9 rounded-full flex items-center justify-center text-lg bg-slate-50 border border-slate-100 ${selectedCategory === cat.id ? "bg-app-primary/10 border-app-primary shadow-sm" : ""}`}>
+                          <div className={`rounded-full flex items-center justify-center bg-slate-50 border border-slate-100 transition-all ${selectedCategory === cat.id ? "bg-app-primary/10 border-app-primary shadow-sm" : ""
+                            } ${(profile?.categoryColumns === 3) ? "w-16 h-16 text-3xl" :
+                              (profile?.categoryColumns === 4) ? "w-13 h-13 text-2xl" :
+                                (profile?.categoryColumns === 5) ? "w-11 h-11 text-xl" : "w-9 h-9 text-lg"
+                            }`}>
                             {cat.emoji}
                           </div>
-                          <span className={`text-[9px] font-bold whitespace-nowrap overflow-hidden text-ellipsis w-full text-center ${selectedCategory === cat.id ? "text-app-primary" : "text-slate-500"}`}>{cat.name}</span>
+                          <span className={`font-bold whitespace-nowrap overflow-hidden text-ellipsis w-full text-center ${selectedCategory === cat.id ? "text-app-primary" : "text-slate-500"
+                            } ${(profile?.categoryColumns === 3) ? "text-[11px]" :
+                              (profile?.categoryColumns === 4) ? "text-[10px]" : "text-[9px]"
+                            }`}>{cat.name}</span>
                         </button>
                       ))}
                   </div>

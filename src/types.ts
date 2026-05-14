@@ -17,6 +17,7 @@ export interface UserProfile {
   hiddenCategoryIds?: string[];
   expenseCategoryOrder?: string[];
   incomeCategoryOrder?: string[];
+  categoryColumns?: number;
 }
 
 export type TransactionType = "expense" | "income" | "transfer";
