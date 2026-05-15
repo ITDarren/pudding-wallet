@@ -329,17 +329,21 @@ export default function App() {
         const profileRef = doc(db, "users", u.uid);
         const unsubscribeProfile = onSnapshot(profileRef, async (snap) => {
           if (!snap.exists()) {
-            const initialProfile: UserProfile = {
+            // Use merge: true to avoid overwriting existing data if exists() was a false negative
+            // Removed balance: 0 to prevent accidental zeroing of existing assets
+            const initialProfile: any = {
               uid: u.uid,
               displayName: u.displayName || "新用戶",
               photoURL: u.photoURL,
-              balance: 0,
               lastActive: Timestamp.now()
             };
-            await setDoc(profileRef, initialProfile);
+            await setDoc(profileRef, initialProfile, { merge: true });
           } else {
             setProfile(snap.data() as UserProfile);
           }
+        }, (error) => {
+          console.error("Profile Sync Error:", error);
+          setNotification({ message: "無法同步個人資料，請檢查網路連線", type: "error" });
         });
 
         // Sync Transactions
@@ -363,6 +367,9 @@ export default function App() {
           });
           setTransactions(list);
           setLoading(false);
+        }, (error) => {
+          console.error("Transactions Sync Error:", error);
+          setNotification({ message: "無法同步交易紀錄，請檢查網路連線", type: "error" });
         });
 
         // Sync Custom Categories
@@ -374,6 +381,9 @@ export default function App() {
           const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as CustomCategory));
           const sortedList = [...list].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
           setCustomCategories(sortedList);
+        }, (error) => {
+          console.error("Categories Sync Error:", error);
+          setNotification({ message: "無法同步自訂分類", type: "error" });
         });
 
         // Sync Bank Accounts
@@ -384,6 +394,9 @@ export default function App() {
         const unsubscribeAccounts = onSnapshot(accQuery, (snap) => {
           const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as BankAccount));
           setAccounts(list);
+        }, (error) => {
+          console.error("Accounts Sync Error:", error);
+          setNotification({ message: "無法同步帳戶資料，請檢查網路連線", type: "error" });
         });
 
         return () => {
