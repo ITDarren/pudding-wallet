@@ -1445,7 +1445,7 @@ export default function App() {
                                           <div className="bg-white p-3 border border-slate-100 shadow-xl rounded-2xl min-w-[120px]">
                                             <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">{payload[0].payload.name}</p>
                                             <div className="space-y-1.5">
-                                              {payload.sort((a: any, b: any) => b.value - a.value).slice(0, 5).map((entry: any, index: number) => {
+                                              {[...payload].sort((a: any, b: any) => b.value - a.value).slice(0, 5).map((entry: any, index: number) => {
                                                 const catName = categories.find(([k]) => k === entry.dataKey)?.[1] || entry.dataKey;
                                                 return (entry.value > 0 &&
                                                   <div key={`tip-${index}`} className="flex justify-between items-center gap-4">
@@ -2089,8 +2089,8 @@ export default function App() {
                                 }
                               }}
                               className={`w-10 py-1.5 text-xs font-mono font-bold rounded-lg transition-all ${(profile?.categoryColumns || 6) === num
-                                  ? "bg-white shadow-sm text-app-primary scale-105"
-                                  : "text-slate-400 hover:text-slate-600"
+                                ? "bg-white shadow-sm text-app-primary scale-105"
+                                : "text-slate-400 hover:text-slate-600"
                                 }`}
                             >
                               {num}
@@ -2208,21 +2208,36 @@ export default function App() {
         {isAdding && (
           <div className="fixed inset-0 z-[60] flex flex-col bg-white">
             <header className="px-6 pt-5 pb-2 flex items-center justify-between">
-              <button onClick={resetEntry} className="text-slate-400 font-bold text-xs uppercase tracking-wider">取消</button>
-              <div className="flex bg-slate-100 p-1 rounded-full w-48">
+              <button
+                onClick={resetEntry}
+                className={`text-slate-400 font-bold uppercase tracking-wider transition-all ${(profile?.categoryColumns === 3) ? "text-base" :
+                    (profile?.categoryColumns === 4) ? "text-sm" : "text-xs"
+                  }`}
+              >
+                取消
+              </button>
+              <div className={`flex bg-slate-100 p-1 rounded-full transition-all ${(profile?.categoryColumns === 3) ? "w-64" :
+                  (profile?.categoryColumns === 4) ? "w-56" : "w-48"
+                }`}>
                 <button
                   onClick={() => {
                     setTransactionType("expense");
                     setSelectedCategory("Food");
                   }}
-                  className={`flex-1 py-1 text-[9px] font-bold rounded-full transition-all ${transactionType === "expense" ? "bg-white shadow-sm text-red-500" : "text-slate-400"}`}
+                  className={`flex-1 py-1 font-bold rounded-full transition-all ${transactionType === "expense" ? "bg-white shadow-sm text-red-500" : "text-slate-400"
+                    } ${(profile?.categoryColumns === 3) ? "text-xs py-2" :
+                      (profile?.categoryColumns === 4) ? "text-[11px] py-1.5" : "text-[9px]"
+                    }`}
                 >支出</button>
                 <button
                   onClick={() => {
                     setTransactionType("income");
                     setSelectedCategory("Salary");
                   }}
-                  className={`flex-1 py-1 text-[9px] font-bold rounded-full transition-all ${transactionType === "income" ? "bg-white shadow-sm text-emerald-500" : "text-slate-400"}`}
+                  className={`flex-1 py-1 font-bold rounded-full transition-all ${transactionType === "income" ? "bg-white shadow-sm text-emerald-500" : "text-slate-400"
+                    } ${(profile?.categoryColumns === 3) ? "text-xs py-2" :
+                      (profile?.categoryColumns === 4) ? "text-[11px] py-1.5" : "text-[9px]"
+                    }`}
                 >收入</button>
                 <button
                   onClick={() => {
@@ -2230,7 +2245,10 @@ export default function App() {
                     setSelectedCategory("Others");
                     setNoteValue("");
                   }}
-                  className={`flex-1 py-1 text-[9px] font-bold rounded-full transition-all ${transactionType === "transfer" ? "bg-white shadow-sm text-blue-500" : "text-slate-400"}`}
+                  className={`flex-1 py-1 font-bold rounded-full transition-all ${transactionType === "transfer" ? "bg-white shadow-sm text-blue-500" : "text-slate-400"
+                    } ${(profile?.categoryColumns === 3) ? "text-xs py-2" :
+                      (profile?.categoryColumns === 4) ? "text-[11px] py-1.5" : "text-[9px]"
+                    }`}
                 >轉帳</button>
               </div>
               <div className="w-8" />
@@ -2279,8 +2297,8 @@ export default function App() {
                 <>
                   {/* Category Grid */}
                   <div className={`grid gap-x-1 gap-y-6 pb-12 ${(profile?.categoryColumns === 3) ? "grid-cols-3" :
-                      (profile?.categoryColumns === 4) ? "grid-cols-4" :
-                        (profile?.categoryColumns === 5) ? "grid-cols-5" : "grid-cols-6"
+                    (profile?.categoryColumns === 4) ? "grid-cols-4" :
+                      (profile?.categoryColumns === 5) ? "grid-cols-5" : "grid-cols-6"
                     }`}>
                     {/* Built-in Categories */}
                     {getSortedFixedCategories(transactionType)
