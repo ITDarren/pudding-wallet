@@ -257,6 +257,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<"history" | "stats" | "accounts" | "profile">("history");
   const [isTabLoading, setIsTabLoading] = useState(false);
   const [notification, setNotification] = useState<{ message: string, type: 'error' | 'success' } | null>(null);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   useEffect(() => {
     if (notification) {
@@ -264,6 +265,25 @@ export default function App() {
       return () => clearTimeout(timer);
     }
   }, [notification]);
+
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOffline(false);
+      setNotification({ message: "網路已連線，已同步最新資料", type: "success" });
+    };
+    const handleOffline = () => {
+      setIsOffline(true);
+      setNotification({ message: "網路已中斷，已自動切換為離線模式", type: "error" });
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
 
   const handleTabChange = (tab: "history" | "stats" | "accounts" | "profile") => {
     if (tab === activeTab) return;
@@ -1133,6 +1153,12 @@ export default function App() {
     <div className="h-[100dvh] bg-slate-50 flex flex-col items-center">
       {/* Mobile-centric Container */}
       <div className="w-full max-w-md h-full bg-white shadow-xl shadow-slate-200 flex flex-col relative overflow-hidden">
+        {isOffline && (
+          <div className="bg-amber-500 text-white text-[11px] font-bold py-1.5 px-4 text-center tracking-wide flex items-center justify-center gap-1.5 z-50 shadow-sm shrink-0">
+            <AlertCircle size={12} />
+            <span>目前為離線模式，變更將在重新連線後同步</span>
+          </div>
+        )}
         <AnimatePresence>
           {notification && (
             <motion.div
