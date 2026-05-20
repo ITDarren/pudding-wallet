@@ -17,7 +17,8 @@ import {
   getDocFromServer,
   setDoc,
   Timestamp,
-  writeBatch
+  writeBatch,
+  increment
 } from "firebase/firestore";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { motion, AnimatePresence } from "motion/react";
@@ -350,12 +351,13 @@ export default function App() {
         const unsubscribeProfile = onSnapshot(profileRef, async (snap) => {
           if (!snap.exists()) {
             // Use merge: true to avoid overwriting existing data if exists() was a false negative
-            // Removed balance: 0 to prevent accidental zeroing of existing assets
             const initialProfile: any = {
               uid: u.uid,
+              balance: 0,
+              cashBalance: 0,
               displayName: u.displayName || "新用戶",
               photoURL: u.photoURL,
-              lastActive: Timestamp.now()
+              lastActive: Timestamp.now()              
             };
             await setDoc(profileRef, initialProfile, { merge: true });
           } else {
@@ -447,6 +449,19 @@ export default function App() {
     });
   }, []);
 
+  useEffect(() => {
+    if (!loading && user && profile && accounts.length >= 0) {
+      if (profile.cashBalance === undefined) {
+        const totalAccountBalance = accounts.reduce((acc, a) => acc + a.balance, 0);
+        const initialCash = (profile.balance ?? 0) - totalAccountBalance;
+        const profileRef = doc(db, "users", user.uid);
+        updateDoc(profileRef, { cashBalance: initialCash }).catch(err =>
+          console.error("Initializing cashBalance failed:", err)
+        );
+      }
+    }
+  }, [loading, user, profile, accounts]);
+
   const handleAddTransaction = async (data: any) => {
     if (!user || !profile) return;
 
@@ -463,7 +478,6 @@ export default function App() {
     }
 
     const batch = writeBatch(db);
-    const updatedAccounts = [...accounts.map(acc => ({ ...acc }))];
 
     const entryTime = new Date();
     let finalTimestamp = Timestamp.fromDate(entryTime);
@@ -495,17 +509,14 @@ export default function App() {
       // 1. Update Profile Balance & Cash Balance
       if (data.type !== "transfer") {
         const balanceOffset = data.type === "income" ? data.amount : -data.amount;
-        const currentBalance = profile.balance ?? 0;
         const profileUpdates: any = {
-          balance: currentBalance + balanceOffset,
+          balance: increment(balanceOffset),
           lastActive: Timestamp.now()
         };
 
         // 如果沒有選擇帳戶，則是現金交易，更新現金餘額
         if (!data.accountId) {
-          const totalAccountBalance = accounts.reduce((acc, a) => acc + a.balance, 0);
-          const currentCash = profile.cashBalance ?? (currentBalance - totalAccountBalance);
-          profileUpdates.cashBalance = currentCash + balanceOffset;
+          profileUpdates.cashBalance = increment(balanceOffset);
         }
 
         batch.update(doc(db, "users", user.uid), profileUpdates);
@@ -518,28 +529,21 @@ export default function App() {
       // 2. Update Accounts
       if (data.type === "transfer") {
         if (data.accountId) {
-          const idx = updatedAccounts.findIndex(a => a.id === data.accountId);
-          if (idx !== -1) updatedAccounts[idx].balance -= data.amount;
+          batch.update(doc(db, "users", user.uid, "accounts", data.accountId), {
+            balance: increment(-data.amount)
+          });
         }
         if (data.toAccountId) {
-          const idx = updatedAccounts.findIndex(a => a.id === data.toAccountId);
-          if (idx !== -1) updatedAccounts[idx].balance += data.amount;
+          batch.update(doc(db, "users", user.uid, "accounts", data.toAccountId), {
+            balance: increment(data.amount)
+          });
         }
       } else if (data.accountId) {
-        const idx = updatedAccounts.findIndex(a => a.id === data.accountId);
-        if (idx !== -1) {
-          const balanceOffset = data.type === "income" ? data.amount : -data.amount;
-          updatedAccounts[idx].balance += balanceOffset;
-        }
+        const balanceOffset = data.type === "income" ? data.amount : -data.amount;
+        batch.update(doc(db, "users", user.uid, "accounts", data.accountId), {
+          balance: increment(balanceOffset)
+        });
       }
-
-      // 3. Batch update changed accounts
-      updatedAccounts.forEach(newAcc => {
-        const oldAcc = accounts.find(a => a.id === newAcc.id);
-        if (oldAcc && Math.abs(oldAcc.balance - newAcc.balance) > 0.001) {
-          batch.update(doc(db, "users", user.uid, "accounts", newAcc.id!), { balance: newAcc.balance });
-        }
-      });
 
       await batch.commit();
     } catch (error) {
@@ -565,7 +569,7 @@ export default function App() {
 
       // Update total asset balance, keep cash balance independent
       batch.update(doc(db, "users", user.uid), {
-        balance: (profile.balance ?? 0) + balanceDiff,
+        balance: increment(balanceDiff),
         lastActive: Timestamp.now()
       });
 
@@ -579,7 +583,6 @@ export default function App() {
     if (!user || !profile || !t.id) return;
 
     const batch = writeBatch(db);
-    const updatedAccounts = [...accounts.map(acc => ({ ...acc }))];
 
     try {
       // 1. Delete Doc
@@ -588,45 +591,42 @@ export default function App() {
       // 2. Revert Balance Impact (Profile)
       // Transfers don't affect pool balance
       const balanceOffset = t.type === "income" ? -t.amount : (t.type === "expense" ? t.amount : 0);
-      const currentBalance = profile.balance ?? 0;
-      const profileUpdates: any = {
-        balance: currentBalance + balanceOffset,
-        lastActive: Timestamp.now()
-      };
 
-      if (!t.accountId && t.type !== 'transfer') {
-        const totalAccountBalance = accounts.reduce((acc, a) => acc + a.balance, 0);
-        const currentCash = profile.cashBalance ?? (currentBalance - totalAccountBalance);
-        profileUpdates.cashBalance = currentCash + balanceOffset;
+      if (balanceOffset !== 0) {
+        const profileUpdates: any = {
+          balance: increment(balanceOffset),
+          lastActive: Timestamp.now()
+        };
+
+        if (!t.accountId && t.type !== 'transfer') {
+          profileUpdates.cashBalance = increment(balanceOffset);
+        }
+
+        batch.update(doc(db, "users", user.uid), profileUpdates);
+      } else {
+        batch.update(doc(db, "users", user.uid), {
+          lastActive: Timestamp.now()
+        });
       }
-
-      batch.update(doc(db, "users", user.uid), profileUpdates);
 
       // 3. Revert Balance Impact (Accounts)
       if (t.type === "transfer") {
         if (t.accountId) {
-          const idx = updatedAccounts.findIndex(a => a.id === t.accountId);
-          if (idx !== -1) updatedAccounts[idx].balance += t.amount;
+          batch.update(doc(db, "users", user.uid, "accounts", t.accountId), {
+            balance: increment(t.amount)
+          });
         }
         if (t.toAccountId) {
-          const idx = updatedAccounts.findIndex(a => a.id === t.toAccountId);
-          if (idx !== -1) updatedAccounts[idx].balance -= t.amount;
+          batch.update(doc(db, "users", user.uid, "accounts", t.toAccountId), {
+            balance: increment(-t.amount)
+          });
         }
       } else if (t.accountId) {
-        const idx = updatedAccounts.findIndex(a => a.id === t.accountId);
-        if (idx !== -1) {
-          const accOffset = t.type === "income" ? -t.amount : t.amount;
-          updatedAccounts[idx].balance += accOffset;
-        }
+        const accOffset = t.type === "income" ? -t.amount : t.amount;
+        batch.update(doc(db, "users", user.uid, "accounts", t.accountId), {
+          balance: increment(accOffset)
+        });
       }
-
-      // 4. Batch update changed accounts
-      updatedAccounts.forEach(newAcc => {
-        const oldAcc = accounts.find(a => a.id === newAcc.id);
-        if (oldAcc && Math.abs(oldAcc.balance - newAcc.balance) > 0.001) {
-          batch.update(doc(db, "users", user.uid, "accounts", newAcc.id!), { balance: newAcc.balance });
-        }
-      });
 
       await batch.commit();
     } catch (error) {
@@ -761,7 +761,7 @@ export default function App() {
 
       // Update total asset balance, keep cash balance independent
       batch.update(doc(db, "users", user.uid), {
-        balance: (profile.balance ?? 0) + balance,
+        balance: increment(balance),
         lastActive: Timestamp.now()
       });
 
@@ -821,11 +821,11 @@ export default function App() {
     const cashChange = type === 'withdraw' ? amount : -amount;
 
     batch.update(accountRef, {
-      balance: account.balance + balanceChange
+      balance: increment(balanceChange)
     });
 
     batch.update(userRef, {
-      cashBalance: cashBalance + cashChange,
+      cashBalance: increment(cashChange),
       lastActive: Timestamp.now()
     });
 
@@ -854,7 +854,7 @@ export default function App() {
 
       // 同步扣除總資產，但不影響現金餘額，達到「不連動」
       batch.update(doc(db, "users", user.uid), {
-        balance: (profile.balance ?? 0) - acc.balance,
+        balance: increment(-acc.balance),
         lastActive: Timestamp.now()
       });
 
@@ -1021,61 +1021,64 @@ export default function App() {
       const original = transactions.find(t => t.id === updated.id);
       if (!original) return;
 
-      const batch = writeBatch(db);
+      // Perform balance check for transfers if source account changes or amount changes
+      if (updated.type === "transfer" && updated.accountId) {
+        const sourceAcc = accounts.find(a => a.id === updated.accountId);
+        if (sourceAcc) {
+          let tempBalance = sourceAcc.balance;
+          if (original.type === "transfer" && original.accountId === updated.accountId) {
+            tempBalance += original.amount;
+          } else if (original.accountId === updated.accountId) {
+            tempBalance += (original.type === "income" ? -original.amount : original.amount);
+          }
 
-      // Use a local copy to track balance changes fairly
-      const updatedAccounts = [...accounts.map(acc => ({ ...acc }))];
-
-      // 1. Revert original impact
-      if (original.type === "transfer") {
-        if (original.accountId) {
-          const idx = updatedAccounts.findIndex(a => a.id === original.accountId);
-          if (idx !== -1) updatedAccounts[idx].balance += original.amount;
-        }
-        if (original.toAccountId) {
-          const idx = updatedAccounts.findIndex(a => a.id === original.toAccountId);
-          if (idx !== -1) updatedAccounts[idx].balance -= original.amount;
-        }
-      } else if (original.accountId) {
-        const offset = original.type === "income" ? -original.amount : original.amount;
-        const idx = updatedAccounts.findIndex(a => a.id === original.accountId);
-        if (idx !== -1) updatedAccounts[idx].balance += offset;
-      }
-
-      // 2. Apply new impact (with balance check for new transfer)
-      if (updated.type === "transfer") {
-        if (updated.accountId) {
-          const idx = updatedAccounts.findIndex(a => a.id === updated.accountId);
-          if (idx !== -1) {
-            if (updatedAccounts[idx].balance < updated.amount) {
-              setNotification({
-                message: `帳戶餘額不足！目前的餘額為：${updatedAccounts[idx].balance.toLocaleString()}`,
-                type: 'error'
-              });
-              return;
-            }
-            updatedAccounts[idx].balance -= updated.amount;
+          if (tempBalance < updated.amount) {
+            setNotification({
+              message: `帳戶餘額不足！目前的餘額為：${tempBalance.toLocaleString()}`,
+              type: 'error'
+            });
+            return;
           }
         }
+      }
+
+      const batch = writeBatch(db);
+
+      // Calculate account balance changes
+      const accountChanges: Record<string, number> = {};
+
+      // 1. Revert original impact on accounts
+      if (original.type === "transfer") {
+        if (original.accountId) {
+          accountChanges[original.accountId] = (accountChanges[original.accountId] || 0) + original.amount;
+        }
+        if (original.toAccountId) {
+          accountChanges[original.toAccountId] = (accountChanges[original.toAccountId] || 0) - original.amount;
+        }
+      } else if (original.accountId) {
+        const revertOffset = original.type === "income" ? -original.amount : original.amount;
+        accountChanges[original.accountId] = (accountChanges[original.accountId] || 0) + revertOffset;
+      }
+
+      // 2. Apply new impact on accounts
+      if (updated.type === "transfer") {
+        if (updated.accountId) {
+          accountChanges[updated.accountId] = (accountChanges[updated.accountId] || 0) - updated.amount;
+        }
         if (updated.toAccountId) {
-          const idx = updatedAccounts.findIndex(a => a.id === updated.toAccountId);
-          if (idx !== -1) updatedAccounts[idx].balance += updated.amount;
+          accountChanges[updated.toAccountId] = (accountChanges[updated.toAccountId] || 0) + updated.amount;
         }
       } else if (updated.accountId) {
-        const newOffset = updated.type === "income" ? updated.amount : -updated.amount;
-        const idx = updatedAccounts.findIndex(a => a.id === updated.accountId);
-        if (idx !== -1) {
-          // Optional: also check balance for non-transfer expenses if desired, 
-          // but specifically requested for account-to-account transfers.
-          updatedAccounts[idx].balance += newOffset;
-        }
+        const applyOffset = updated.type === "income" ? updated.amount : -updated.amount;
+        accountChanges[updated.accountId] = (accountChanges[updated.accountId] || 0) + applyOffset;
       }
 
       // 3. Batch update changed accounts
-      updatedAccounts.forEach(newAcc => {
-        const oldAcc = accounts.find(a => a.id === newAcc.id);
-        if (oldAcc && Math.abs(oldAcc.balance - newAcc.balance) > 0.001) {
-          batch.update(doc(db, "users", user.uid, "accounts", newAcc.id!), { balance: newAcc.balance });
+      Object.entries(accountChanges).forEach(([accId, diff]) => {
+        if (Math.abs(diff) > 0.001) {
+          batch.update(doc(db, "users", user.uid, "accounts", accId), {
+            balance: increment(diff)
+          });
         }
       });
 
@@ -1083,18 +1086,17 @@ export default function App() {
       const originalOffset = original.type === "income" ? original.amount : (original.type === "expense" ? -original.amount : 0);
       const updatedOffset = updated.type === "income" ? updated.amount : (updated.type === "expense" ? -updated.amount : 0);
       const profileBalanceDiff = updatedOffset - originalOffset;
-      const currentBalance = profile.balance ?? 0;
 
       const profileUpdates: any = {
-        balance: currentBalance + profileBalanceDiff,
         lastActive: Timestamp.now()
       };
 
-      // Handle Cash Balance Coupling
-      const totalAccountBalance = accounts.reduce((acc, a) => acc + a.balance, 0);
-      const currentCash = profile.cashBalance ?? (currentBalance - totalAccountBalance);
-      let cashDiff = 0;
+      if (profileBalanceDiff !== 0) {
+        profileUpdates.balance = increment(profileBalanceDiff);
+      }
 
+      // Handle Cash Balance Coupling
+      let cashDiff = 0;
       // Revert original if it was cash
       if (original.type !== 'transfer' && !original.accountId) {
         cashDiff -= originalOffset;
@@ -1104,8 +1106,8 @@ export default function App() {
         cashDiff += updatedOffset;
       }
 
-      if (cashDiff !== 0 || profile.cashBalance === undefined) {
-        profileUpdates.cashBalance = currentCash + cashDiff;
+      if (cashDiff !== 0) {
+        profileUpdates.cashBalance = increment(cashDiff);
       }
 
       batch.update(doc(db, "users", user.uid), profileUpdates);
