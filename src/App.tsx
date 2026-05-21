@@ -359,23 +359,7 @@ export default function App() {
             };
             await setDoc(profileRef, initialProfile, { merge: true });
           } else {
-            const data = snap.data() as UserProfile;
-            const cleanedData: UserProfile = {
-              ...data,
-              balance: (typeof data.balance === 'number' && !isNaN(data.balance)) ? data.balance : 0,
-              cashBalance: (data.cashBalance === undefined || (typeof data.cashBalance === 'number' && !isNaN(data.cashBalance))) ? data.cashBalance : 0
-            };
-            setProfile(cleanedData);
-
-            if (
-              (typeof data.balance === 'number' && isNaN(data.balance)) ||
-              (data.cashBalance !== undefined && typeof data.cashBalance === 'number' && isNaN(data.cashBalance))
-            ) {
-              const updates: any = {};
-              if (typeof data.balance === 'number' && isNaN(data.balance)) updates.balance = 0;
-              if (data.cashBalance !== undefined && typeof data.cashBalance === 'number' && isNaN(data.cashBalance)) updates.cashBalance = 0;
-              updateDoc(profileRef, updates).catch(err => console.error("Fixing profile NaN failed:", err));
-            }
+            setProfile(snap.data() as UserProfile);
           }
         }, (error) => {
           console.error("Profile Sync Error:", error);
@@ -495,16 +479,15 @@ export default function App() {
       // 1. Update Profile Balance & Cash Balance
       if (data.type !== "transfer") {
         const balanceOffset = data.type === "income" ? data.amount : -data.amount;
-        const currentBalance = profile.balance ?? 0;
         const profileUpdates: any = {
-          balance: currentBalance + balanceOffset,
+          balance: profile.balance + balanceOffset,
           lastActive: Timestamp.now()
         };
 
         // 如果沒有選擇帳戶，則是現金交易，更新現金餘額
         if (!data.accountId) {
           const totalAccountBalance = accounts.reduce((acc, a) => acc + a.balance, 0);
-          const currentCash = profile.cashBalance ?? (currentBalance - totalAccountBalance);
+          const currentCash = profile.cashBalance ?? (profile.balance - totalAccountBalance);
           profileUpdates.cashBalance = currentCash + balanceOffset;
         }
 
@@ -565,7 +548,7 @@ export default function App() {
 
       // Update total asset balance, keep cash balance independent
       batch.update(doc(db, "users", user.uid), {
-        balance: (profile.balance ?? 0) + balanceDiff,
+        balance: profile.balance + balanceDiff,
         lastActive: Timestamp.now()
       });
 
@@ -588,15 +571,14 @@ export default function App() {
       // 2. Revert Balance Impact (Profile)
       // Transfers don't affect pool balance
       const balanceOffset = t.type === "income" ? -t.amount : (t.type === "expense" ? t.amount : 0);
-      const currentBalance = profile.balance ?? 0;
       const profileUpdates: any = {
-        balance: currentBalance + balanceOffset,
+        balance: profile.balance + balanceOffset,
         lastActive: Timestamp.now()
       };
 
       if (!t.accountId && t.type !== 'transfer') {
         const totalAccountBalance = accounts.reduce((acc, a) => acc + a.balance, 0);
-        const currentCash = profile.cashBalance ?? (currentBalance - totalAccountBalance);
+        const currentCash = profile.cashBalance ?? (profile.balance - totalAccountBalance);
         profileUpdates.cashBalance = currentCash + balanceOffset;
       }
 
@@ -761,7 +743,7 @@ export default function App() {
 
       // Update total asset balance, keep cash balance independent
       batch.update(doc(db, "users", user.uid), {
-        balance: (profile.balance ?? 0) + balance,
+        balance: profile.balance + balance,
         lastActive: Timestamp.now()
       });
 
@@ -801,8 +783,7 @@ export default function App() {
 
     const { type, account } = showCashTransfer;
     const totalAccountBalance = accounts.reduce((acc, a) => acc + a.balance, 0);
-    const currentBalance = profile.balance ?? 0;
-    const cashBalance = profile.cashBalance ?? (currentBalance - totalAccountBalance);
+    const cashBalance = profile.cashBalance ?? (profile.balance - totalAccountBalance);
 
     if (type === 'withdraw' && account.balance < amount) {
       setNotification({ message: '帳戶餘額不足', type: 'error' });
@@ -854,7 +835,7 @@ export default function App() {
 
       // 同步扣除總資產，但不影響現金餘額，達到「不連動」
       batch.update(doc(db, "users", user.uid), {
-        balance: (profile.balance ?? 0) - acc.balance,
+        balance: profile.balance - acc.balance,
         lastActive: Timestamp.now()
       });
 
@@ -1083,16 +1064,15 @@ export default function App() {
       const originalOffset = original.type === "income" ? original.amount : (original.type === "expense" ? -original.amount : 0);
       const updatedOffset = updated.type === "income" ? updated.amount : (updated.type === "expense" ? -updated.amount : 0);
       const profileBalanceDiff = updatedOffset - originalOffset;
-      const currentBalance = profile.balance ?? 0;
 
       const profileUpdates: any = {
-        balance: currentBalance + profileBalanceDiff,
+        balance: profile.balance + profileBalanceDiff,
         lastActive: Timestamp.now()
       };
 
       // Handle Cash Balance Coupling
       const totalAccountBalance = accounts.reduce((acc, a) => acc + a.balance, 0);
-      const currentCash = profile.cashBalance ?? (currentBalance - totalAccountBalance);
+      const currentCash = profile.cashBalance ?? (profile.balance - totalAccountBalance);
       let cashDiff = 0;
 
       // Revert original if it was cash
