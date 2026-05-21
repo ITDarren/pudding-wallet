@@ -1522,7 +1522,7 @@ export default function App() {
                               return {
                                 name: `${monthNum}月`,
                                 amount: yearlyTransactions
-                                  .filter(t => getSafeDate(t.timestamp).getMonth() === i)
+                                  .filter(t => getSafeDate(t.timestamp).getMonth() === i && !hiddenChartCategories.has(t.category))
                                   .reduce((acc, curr) => acc + curr.amount, 0)
                               };
                             });
@@ -1684,7 +1684,7 @@ export default function App() {
 
                         return (
                           <>
-                            {chartType === 'line' && summaryData.length > 0 && (
+                            {(chartType === 'line' || chartType === 'bar') && summaryData.length > 0 && (
                               <div className="flex justify-end gap-3 px-2 mb-2">
                                 <button
                                   onClick={() => setHiddenChartCategories(new Set())}
@@ -1706,7 +1706,7 @@ export default function App() {
                                 <div
                                   key={item.id}
                                   onClick={() => {
-                                    if (chartType === 'line') {
+                                    if (chartType === 'line' || chartType === 'bar') {
                                       const newHidden = new Set(hiddenChartCategories);
                                       if (newHidden.has(item.id)) {
                                         newHidden.delete(item.id);
@@ -1716,7 +1716,7 @@ export default function App() {
                                       setHiddenChartCategories(newHidden);
                                     }
                                   }}
-                                  className={`bg-white py-3.5 px-5 rounded-[1.5rem] border border-slate-100 flex items-center justify-between shadow-sm active:scale-[0.98] transition-all ${chartType === 'line' ? 'cursor-pointer' : ''} ${isHidden ? 'opacity-30' : ''}`}
+                                  className={`bg-white py-3.5 px-5 rounded-[1.5rem] border border-slate-100 flex items-center justify-between shadow-sm active:scale-[0.98] transition-all ${chartType === 'line' || chartType === 'bar' ? 'cursor-pointer' : ''} ${isHidden ? 'opacity-30' : ''}`}
                                 >
                                   <div className="flex items-center gap-4">
                                     <div
