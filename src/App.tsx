@@ -158,14 +158,14 @@ const getCategoryEmoji = (category: string, customCategories: CustomCategory[] =
   if (custom) return custom.emoji;
 
   const mapping: Record<string, string> = {
-    "Food": "🍔",
+    "Food": "🍽️",
     "Shopping": "🛍️",
     "Transport": "🚗",
     "Social": "👥",
     "Bills": "📄",
     "Living": "🧻",
     "Beauty": "💄",
-    "Entertainment": "🎮",
+    "Entertainment": "🎤",
     "Travel": "✈️",
     "Home": "🏘️",
     "Repair": "🔧",
@@ -174,10 +174,10 @@ const getCategoryEmoji = (category: string, customCategories: CustomCategory[] =
     "Education": "📚",
     "Income": "💰",
     "Salary": "💵",
-    "Bonus": "🧧",
+    "Bonus": "🏆",
     "Investment": "📈",
     "SideHustle": "🚲",
-    "Gift": "🎁",
+    "Gift": "🧧",
     "Others": "📦"
   };
   return mapping[category] || "✨";
