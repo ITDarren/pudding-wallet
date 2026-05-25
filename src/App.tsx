@@ -195,6 +195,14 @@ const getCategoryLabel = (category: string, customCategories: CustomCategory[] =
   return CATEGORIES[category] || category;
 };
 
+const getLocalISODate = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -315,8 +323,8 @@ export default function App() {
   const [transactionType, setTransactionType] = useState<TransactionType>("expense");
   const [selectedToAccountId, setSelectedToAccountId] = useState<string | null>(null);
   const [noteValue, setNoteValue] = useState("");
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
-  const [viewMonth, setViewMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
+  const [selectedDate, setSelectedDate] = useState(getLocalISODate());
+  const [viewMonth, setViewMonth] = useState(getLocalISODate().slice(0, 7)); // YYYY-MM
   const [showAddCategory, setShowAddCategory] = useState<"expense" | "income" | null>(null);
   const [newCatName, setNewCatName] = useState("");
   const [newCatEmoji, setNewCatEmoji] = useState("✨");
@@ -2450,7 +2458,7 @@ export default function App() {
                       <Calendar size={18} className="text-app-primary" />
                       <span className="text-xs font-bold text-slate-600">
                         {(() => {
-                          const today = new Date().toISOString().split("T")[0];
+                          const today = getLocalISODate();
                           if (selectedDate === today) return "今日";
                           const parts = selectedDate.split("-");
                           return `${parts[1]}/${parts[2]}`;
@@ -2461,7 +2469,7 @@ export default function App() {
                         value={selectedDate}
                         onChange={(e) => {
                           const val = e.target.value;
-                          setSelectedDate(val || new Date().toISOString().split("T")[0]);
+                          setSelectedDate(val || getLocalISODate());
                         }}
                         className="absolute inset-0 opacity-0 cursor-pointer"
                       />
