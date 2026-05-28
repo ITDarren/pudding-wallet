@@ -49,7 +49,8 @@ import {
   FileText,
   Search,
   AlertCircle,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Clock
 } from "lucide-react";
 import {
   PieChart as RePieChart,
@@ -1002,6 +1003,40 @@ export default function App() {
     const day = now.getDate().toString().padStart(2, '0');
     return `${y}-${m}-${day}`;
   });
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+  const suggestedKeywords = useMemo(() => {
+    if (!searchStartDate || !searchEndDate) return [];
+    const sD = new Date(searchStartDate);
+    const eD = new Date(searchEndDate);
+    eD.setHours(23, 59, 59, 999);
+
+    const filtered = transactions
+      .filter(t => {
+        const d = getSafeDate(t.timestamp);
+        return d >= sD && d <= eD && t.note && t.note.trim() !== "";
+      })
+      .sort((a, b) => getSafeDate(b.timestamp).getTime() - getSafeDate(a.timestamp).getTime());
+
+    const uniqueNotes = new Set<string>();
+    const keywords: string[] = [];
+
+    for (const t of filtered) {
+      const note = t.note!.trim();
+      if (!uniqueNotes.has(note)) {
+        uniqueNotes.add(note);
+        keywords.push(note);
+      }
+    }
+
+    return keywords;
+  }, [transactions, searchStartDate, searchEndDate]);
+
+  const filteredSuggestions = useMemo(() => {
+    const kw = searchKeyword.trim().toLowerCase();
+    if (!kw) return suggestedKeywords;
+    return suggestedKeywords.filter(note => note.toLowerCase().includes(kw));
+  }, [suggestedKeywords, searchKeyword]);
 
   const handleUpdateTransaction = async (updated: Transaction) => {
     if (!user || !profile || !updated.id) return;
@@ -2760,9 +2795,52 @@ export default function App() {
                     type="search"
                     value={searchKeyword}
                     onChange={(e) => setSearchKeyword(e.target.value)}
+                    onFocus={() => setIsSearchFocused(true)}
+                    onBlur={() => setIsSearchFocused(false)}
                     placeholder="搜尋備註關鍵字..."
                     className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-3 pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-app-primary/20"
                   />
+                  <AnimatePresence>
+                    {isSearchFocused && filteredSuggestions.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                        transition={{ duration: 0.15, ease: "easeOut" }}
+                        className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 bg-white/95 backdrop-blur-md border border-slate-100 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] max-h-52 overflow-y-auto p-2 no-scrollbar"
+                      >
+                        <div className="text-[10px] font-bold text-slate-400 px-3 py-1.5 uppercase tracking-wider flex items-center justify-between">
+                          <span>區間內常用關鍵字</span>
+                          <span className="text-[9px] font-normal text-slate-300">由近到遠</span>
+                        </div>
+                        <div className="h-px bg-slate-100/50 mx-2 mb-1" />
+                        <div className="grid grid-cols-1 gap-0.5">
+                          {filteredSuggestions.map((note, index) => (
+                            <button
+                              key={index}
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                setSearchKeyword(note);
+                                setIsSearchFocused(false);
+                              }}
+                              onTouchStart={(e) => {
+                                e.preventDefault();
+                                setSearchKeyword(note);
+                                setIsSearchFocused(false);
+                              }}
+                              className="group w-full text-left px-3 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 active:bg-slate-100 rounded-xl transition-all duration-150 flex items-center gap-2 cursor-pointer"
+                            >
+                              <Clock size={12} className="text-slate-300 group-hover:text-slate-400 transition-colors flex-shrink-0" />
+                              <span className="truncate flex-1">{note}</span>
+                              <span className="text-[9px] text-slate-300 font-normal opacity-0 group-hover:opacity-100 transition-opacity">
+                                帶入搜尋
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
 
