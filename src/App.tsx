@@ -987,6 +987,7 @@ export default function App() {
   };
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [searchCategory, setSearchCategory] = useState<string | null>(null);
   const [searchStartDate, setSearchStartDate] = useState(() => {
     const now = new Date();
     // First day of previous month 00:00 local time
@@ -1004,6 +1005,43 @@ export default function App() {
     return `${y}-${m}-${day}`;
   });
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+  // Automatically reset selected category when query date range changes
+  useEffect(() => {
+    setSearchCategory(null);
+  }, [searchStartDate, searchEndDate]);
+
+  const availableCategories = useMemo(() => {
+    if (!searchStartDate || !searchEndDate) return [];
+    const sD = new Date(searchStartDate);
+    const eD = new Date(searchEndDate);
+    eD.setHours(23, 59, 59, 999);
+
+    const filtered = transactions.filter(t => {
+      const d = getSafeDate(t.timestamp);
+      return d >= sD && d <= eD;
+    });
+
+    const categorySet = new Set<string>();
+    const list: { id: string; name: string; emoji: string; type: TransactionType }[] = [];
+
+    for (const t of filtered) {
+      if (t.category && !categorySet.has(t.category)) {
+        categorySet.add(t.category);
+        const name = getCategoryLabel(t.category, customCategories, t.type);
+        const emoji = getCategoryEmoji(t.category, customCategories);
+        list.push({ id: t.category, name, emoji, type: t.type });
+      }
+    }
+
+    // Sort categories: Expense first, then Income. Inside same type, sort by name
+    return list.sort((a, b) => {
+      if (a.type !== b.type) {
+        return a.type === 'expense' ? -1 : 1;
+      }
+      return a.name.localeCompare(b.name, 'zh-hant');
+    });
+  }, [transactions, searchStartDate, searchEndDate, customCategories]);
 
   const suggestedKeywords = useMemo(() => {
     if (!searchStartDate || !searchEndDate) return [];
@@ -1272,6 +1310,7 @@ export default function App() {
                     setSearchStartDate(start);
                     setSearchEndDate(end);
                     setSearchKeyword("");
+                    setSearchCategory(null);
                     setShowSearchModal(true);
                   }}
                   className="w-10 h-10 flex items-center justify-center rounded-full bg-black/10 text-white active:scale-90 transition-all"
@@ -2844,6 +2883,41 @@ export default function App() {
                 </div>
               </div>
 
+              {/* Category Filter Chips */}
+              {availableCategories.length > 0 && (
+                <div className="mb-4">
+                  <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                    <button
+                      onClick={() => setSearchCategory(null)}
+                      className={`flex-shrink-0 px-3.5 py-1.5 rounded-xl text-[10px] font-bold border transition-all duration-200 active:scale-95 ${
+                        searchCategory === null
+                          ? "bg-app-primary text-app-accent border-app-primary shadow-md shadow-app-primary/20 scale-105"
+                          : "bg-slate-50 text-slate-400 border-slate-100 hover:bg-slate-100/50"
+                      }`}
+                    >
+                      📁 全部 ({availableCategories.length})
+                    </button>
+                    {availableCategories.map((cat) => {
+                      const isSelected = searchCategory === cat.id;
+                      return (
+                        <button
+                          key={cat.id}
+                          onClick={() => setSearchCategory(isSelected ? null : cat.id)}
+                          className={`flex-shrink-0 px-3.5 py-1.5 rounded-xl text-[10px] font-bold border flex items-center gap-1.5 transition-all duration-200 active:scale-95 ${
+                            isSelected
+                              ? "bg-app-primary text-app-accent border-app-primary shadow-md shadow-app-primary/20 scale-105"
+                              : "bg-slate-50 text-slate-400 border-slate-100 hover:bg-slate-100/50"
+                          }`}
+                        >
+                          <span className="text-xs leading-none">{cat.emoji}</span>
+                          <span>{cat.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Date Pickers - Single Row, No Labels */}
               <div className="mb-5 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-2 bg-slate-50 rounded-2xl border border-slate-100">
                 <input
@@ -2863,8 +2937,6 @@ export default function App() {
 
               <div className="flex-1 overflow-y-auto pr-1">
                 {(() => {
-                  if (searchKeyword.trim() === "") return null;
-
                   const sD = new Date(searchStartDate);
                   const eD = new Date(searchEndDate);
                   eD.setHours(23, 59, 59, 999);
@@ -2875,8 +2947,18 @@ export default function App() {
 
                     if (!isInRange) return false;
 
-                    // Fuzzy keyword check
-                    return t.note && t.note.toLowerCase().includes(searchKeyword.toLowerCase());
+                    // Filter by keyword if keyword is entered
+                    if (searchKeyword.trim() !== "") {
+                      const hasKeyword = t.note && t.note.toLowerCase().includes(searchKeyword.toLowerCase());
+                      if (!hasKeyword) return false;
+                    }
+
+                    // Filter by category if category is selected
+                    if (searchCategory !== null) {
+                      if (t.category !== searchCategory) return false;
+                    }
+
+                    return true;
                   }).sort((a, b) => {
                     const da = getSafeDate(a.timestamp).getTime();
                     const db = getSafeDate(b.timestamp).getTime();
