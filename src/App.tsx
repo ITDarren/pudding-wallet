@@ -2673,6 +2673,29 @@ export default function App() {
                 </div>
 
                 <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">日期</label>
+                  <input
+                    type="date"
+                    value={(() => {
+                      const d = getSafeDate(editingTransaction.timestamp);
+                      const y = d.getFullYear();
+                      const m = String(d.getMonth() + 1).padStart(2, '0');
+                      const day = String(d.getDate()).padStart(2, '0');
+                      return `${y}-${m}-${day}`;
+                    })()}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (!val) return;
+                      const [y, m, d] = val.split('-').map(Number);
+                      const oldDate = getSafeDate(editingTransaction.timestamp);
+                      const newDate = new Date(y, m - 1, d, oldDate.getHours(), oldDate.getMinutes(), oldDate.getSeconds(), oldDate.getMilliseconds());
+                      setEditingTransaction({ ...editingTransaction, timestamp: Timestamp.fromDate(newDate) });
+                    }}
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-3 text-sm text-slate-600 font-bold focus:outline-none"
+                  />
+                </div>
+
+                <div>
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">備註</label>
                   <input
                     type="search"
