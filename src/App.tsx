@@ -337,6 +337,8 @@ export default function App() {
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [showAccountDetail, setShowAccountDetail] = useState<BankAccount | null>(null);
+  const [accountDetailPage, setAccountDetailPage] = useState(1);
   const [showDeleteTransactionConfirm, setShowDeleteTransactionConfirm] = useState<Transaction | null>(null);
   const [showDeleteCatConfirm, setShowDeleteCatConfirm] = useState<string | null>(null);
   const [catHasTransactionsNotice, setCatHasTransactionsNotice] = useState<boolean>(false);
@@ -1075,6 +1077,98 @@ export default function App() {
     if (!kw) return suggestedKeywords;
     return suggestedKeywords.filter(note => note.toLowerCase().includes(kw));
   }, [suggestedKeywords, searchKeyword]);
+
+  const [accSearchKeyword, setAccSearchKeyword] = useState("");
+  const [accSearchCategory, setAccSearchCategory] = useState<string | null>(null);
+  const [accSearchStartDate, setAccSearchStartDate] = useState(() => {
+    const now = new Date();
+    const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const y = d.getFullYear();
+    const m = (d.getMonth() + 1).toString().padStart(2, '0');
+    const day = d.getDate().toString().padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  });
+  const [accSearchEndDate, setAccSearchEndDate] = useState(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = (now.getMonth() + 1).toString().padStart(2, '0');
+    const day = now.getDate().toString().padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  });
+  const [accIsSearchFocused, setAccIsSearchFocused] = useState(false);
+
+  // Automatically reset selected category when query date range changes for account details
+  useEffect(() => {
+    setAccSearchCategory(null);
+  }, [accSearchStartDate, accSearchEndDate]);
+
+  const accAvailableCategories = useMemo(() => {
+    if (!showAccountDetail || !accSearchStartDate || !accSearchEndDate) return [];
+    const sD = new Date(accSearchStartDate);
+    const eD = new Date(accSearchEndDate);
+    eD.setHours(23, 59, 59, 999);
+
+    const filtered = transactions.filter(t => {
+      const d = getSafeDate(t.timestamp);
+      return d >= sD && d <= eD &&
+             (t.type === 'income' || t.type === 'expense') &&
+             t.accountId === showAccountDetail.id;
+    });
+
+    const categorySet = new Set<string>();
+    const list: { id: string; name: string; emoji: string; type: TransactionType }[] = [];
+
+    for (const t of filtered) {
+      if (t.category && !categorySet.has(t.category)) {
+        categorySet.add(t.category);
+        const name = getCategoryLabel(t.category, customCategories, t.type);
+        const emoji = getCategoryEmoji(t.category, customCategories);
+        list.push({ id: t.category, name, emoji, type: t.type });
+      }
+    }
+
+    return list.sort((a, b) => {
+      if (a.type !== b.type) {
+        return a.type === 'expense' ? -1 : 1;
+      }
+      return a.name.localeCompare(b.name, 'zh-hant');
+    });
+  }, [transactions, accSearchStartDate, accSearchEndDate, showAccountDetail]);
+
+  const accSuggestedKeywords = useMemo(() => {
+    if (!showAccountDetail || !accSearchStartDate || !accSearchEndDate) return [];
+    const sD = new Date(accSearchStartDate);
+    const eD = new Date(accSearchEndDate);
+    eD.setHours(23, 59, 59, 999);
+
+    const filtered = transactions
+      .filter(t => {
+        const d = getSafeDate(t.timestamp);
+        return d >= sD && d <= eD && t.note && t.note.trim() !== "" &&
+               (t.type === 'income' || t.type === 'expense') &&
+               t.accountId === showAccountDetail.id;
+      })
+      .sort((a, b) => getSafeDate(b.timestamp).getTime() - getSafeDate(a.timestamp).getTime());
+
+    const uniqueNotes = new Set<string>();
+    const keywords: string[] = [];
+
+    for (const t of filtered) {
+      const note = t.note!.trim();
+      if (!uniqueNotes.has(note)) {
+        uniqueNotes.add(note);
+        keywords.push(note);
+      }
+    }
+
+    return keywords;
+  }, [transactions, accSearchStartDate, accSearchEndDate, showAccountDetail]);
+
+  const accFilteredSuggestions = useMemo(() => {
+    const kw = accSearchKeyword.trim().toLowerCase();
+    if (!kw) return accSuggestedKeywords;
+    return accSuggestedKeywords.filter(note => note.toLowerCase().includes(kw));
+  }, [accSuggestedKeywords, accSearchKeyword]);
 
   const handleUpdateTransaction = async (updated: Transaction) => {
     if (!user || !profile || !updated.id) return;
@@ -1893,11 +1987,23 @@ export default function App() {
                         <motion.div
                           key={acc.id}
                           layout
-                          className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm relative overflow-hidden group"
+                          className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm relative overflow-hidden group cursor-pointer active:scale-[0.98] transition-transform"
+                          onClick={() => {
+                            setShowAccountDetail(acc);
+                            setAccountDetailPage(1);
+                            setAccSearchKeyword("");
+                            setAccSearchCategory(null);
+                            const now = new Date();
+                            const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                            setAccSearchStartDate(`${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`);
+                            setAccSearchEndDate(`${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`);
+                            setAccIsSearchFocused(false);
+                          }}
                         >
                           <div className="absolute top-0 right-0 p-2 flex gap-1 items-center">
                             <button
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setEditingAccount(acc);
                                 setNewAccountName(acc.name);
                                 setNewBankName(acc.bankName);
@@ -1910,7 +2016,7 @@ export default function App() {
                               <Pencil size={18} />
                             </button>
                             <button
-                              onClick={() => setShowDeleteConfirm(acc.id!)}
+                              onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(acc.id!); }}
                               className="p-2 text-slate-400 hover:text-red-500 transition-colors"
                             >
                               <Trash2 size={18} />
@@ -1918,14 +2024,14 @@ export default function App() {
                             <div className="flex flex-col gap-1 ml-1 bg-slate-50 rounded-lg p-0.5 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                               <button
                                 disabled={index === 0}
-                                onClick={() => handleMoveAccount(acc.id!, 'up')}
+                                onClick={(e) => { e.stopPropagation(); handleMoveAccount(acc.id!, 'up'); }}
                                 className="p-1 text-slate-300 hover:text-slate-600 disabled:opacity-20"
                               >
                                 <ChevronUp size={12} />
                               </button>
                               <button
                                 disabled={index === accounts.length - 1}
-                                onClick={() => handleMoveAccount(acc.id!, 'down')}
+                                onClick={(e) => { e.stopPropagation(); handleMoveAccount(acc.id!, 'down'); }}
                                 className="p-1 text-slate-300 hover:text-slate-600 disabled:opacity-20"
                               >
                                 <ChevronDown size={12} />
@@ -1952,7 +2058,8 @@ export default function App() {
                             </p>
                             <div className="flex gap-2">
                               <button
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   setShowCashTransfer({ type: 'withdraw', account: acc });
                                   setCashTransferAmount("");
                                 }}
@@ -1961,7 +2068,8 @@ export default function App() {
                                 提款
                               </button>
                               <button
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   setShowCashTransfer({ type: 'deposit', account: acc });
                                   setCashTransferAmount("");
                                 }}
@@ -3432,6 +3540,282 @@ export default function App() {
             </motion.div>
           </div>
         )}
+      </AnimatePresence>
+
+      {/* Account Detail Modal */}
+      <AnimatePresence>
+        {showAccountDetail && (() => {
+          const acc = showAccountDetail;
+          const sD = new Date(accSearchStartDate);
+          const eD = new Date(accSearchEndDate);
+          eD.setHours(23, 59, 59, 999);
+
+          const accTransactions = transactions
+            .filter(t => {
+              if (!((t.type === 'income' || t.type === 'expense') && t.accountId === acc.id)) {
+                return false;
+              }
+              const d = getSafeDate(t.timestamp);
+              const isInRange = d >= sD && d <= eD;
+              if (!isInRange) return false;
+
+              if (accSearchKeyword.trim() !== "") {
+                const hasKeyword = t.note && t.note.toLowerCase().includes(accSearchKeyword.toLowerCase());
+                if (!hasKeyword) return false;
+              }
+
+              if (accSearchCategory !== null) {
+                if (t.category !== accSearchCategory) return false;
+              }
+
+              return true;
+            })
+            .sort((a, b) => getSafeDate(b.timestamp).getTime() - getSafeDate(a.timestamp).getTime());
+
+          const accIncome = accTransactions
+            .filter(t => t.type === 'income' && t.accountId === acc.id)
+            .reduce((s, t) => s + t.amount, 0);
+          const accExpense = accTransactions
+            .filter(t => t.type === 'expense' && t.accountId === acc.id)
+            .reduce((s, t) => s + t.amount, 0);
+
+          // Group accTransactions by month YYYY年MM月
+          const groups: { [key: string]: Transaction[] } = {};
+          accTransactions.forEach(t => {
+            const d = getSafeDate(t.timestamp);
+            const monthKey = `${d.getFullYear()}年${(d.getMonth() + 1).toString().padStart(2, '0')}月`;
+            if (!groups[monthKey]) groups[monthKey] = [];
+            groups[monthKey].push(t);
+          });
+
+          return (
+            <div className="fixed inset-0 z-[80] flex items-end justify-center">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowAccountDetail(null)}
+                className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+              />
+              <motion.div
+                initial={{ opacity: 0, y: 60 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 60 }}
+                transition={{ type: 'spring', damping: 26, stiffness: 300 }}
+                className="relative w-full max-w-md bg-white rounded-t-[2.5rem] shadow-2xl overflow-hidden flex flex-col"
+                style={{ maxHeight: '88dvh' }}
+              >
+                {/* Header */}
+                <div className="px-6 pt-6 pb-4 flex-shrink-0">
+                  <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-5" />
+                  <div className="flex items-center gap-3 mb-4">
+                    <div
+                      className="w-11 h-11 rounded-xl flex items-center justify-center text-xl font-bold shadow-inner"
+                      style={{ backgroundColor: `${acc.color}20`, color: acc.color, border: `1px solid ${acc.color}40` }}
+                    >
+                      {acc.bankName.slice(0, 1) || "🏦"}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-slate-800 text-base">{acc.name}</h3>
+                      <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">{acc.bankName}</p>
+                    </div>
+                    <button
+                      onClick={() => setShowAccountDetail(null)}
+                      className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-400 hover:bg-slate-200 transition-colors"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+
+
+                  {/* Keyword Search */}
+                  <div className="mt-3 relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                      <Search size={16} />
+                    </span>
+                    <input
+                      type="search"
+                      value={accSearchKeyword}
+                      onChange={(e) => setAccSearchKeyword(e.target.value)}
+                      onFocus={() => setAccIsSearchFocused(true)}
+                      onBlur={() => setAccIsSearchFocused(false)}
+                      placeholder="搜尋備註關鍵字..."
+                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-2.5 pl-11 pr-4 text-xs focus:outline-none focus:ring-2 focus:ring-app-primary/20"
+                    />
+                    <AnimatePresence>
+                      {accIsSearchFocused && accFilteredSuggestions.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                          transition={{ duration: 0.15, ease: "easeOut" }}
+                          className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 bg-white/95 backdrop-blur-md border border-slate-100 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] max-h-40 overflow-y-auto p-2 no-scrollbar"
+                        >
+                          <div className="text-[9px] font-bold text-slate-400 px-3 py-1.5 uppercase tracking-wider flex items-center justify-between">
+                            <span>區間內常用關鍵字</span>
+                            <span className="text-[8px] font-normal text-slate-300">由近到遠</span>
+                          </div>
+                          <div className="h-px bg-slate-100/50 mx-2 mb-1" />
+                          <div className="grid grid-cols-1 gap-0.5">
+                            {accFilteredSuggestions.map((note, index) => (
+                              <button
+                                key={index}
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  setAccSearchKeyword(note);
+                                  setAccIsSearchFocused(false);
+                                }}
+                                onTouchStart={(e) => {
+                                  e.preventDefault();
+                                  setAccSearchKeyword(note);
+                                  setAccIsSearchFocused(false);
+                                }}
+                                className="group w-full text-left px-3 py-1.5 text-[11px] font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 active:bg-slate-100 rounded-lg transition-all duration-150 flex items-center gap-2 cursor-pointer"
+                              >
+                                <Clock size={10} className="text-slate-300 group-hover:text-slate-400 transition-colors flex-shrink-0" />
+                                <span className="truncate flex-1">{note}</span>
+                                <span className="text-[8px] text-slate-300 font-normal opacity-0 group-hover:opacity-100 transition-opacity">
+                                  帶入搜尋
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Category Filter Chips */}
+                  {accAvailableCategories.length > 0 && (
+                    <div className="mt-2.5">
+                      <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                        <button
+                          onClick={() => setAccSearchCategory(null)}
+                          className={`flex-shrink-0 px-3 py-1 rounded-xl text-[9px] font-bold border transition-all duration-200 active:scale-95 ${
+                            accSearchCategory === null
+                              ? "bg-app-primary text-app-accent border-app-primary shadow-sm"
+                              : "bg-slate-50 text-slate-400 border-slate-100 hover:bg-slate-100/50"
+                          }`}
+                        >
+                          📁 全部 ({accAvailableCategories.length})
+                        </button>
+                        {accAvailableCategories.map((cat) => {
+                          const isSelected = accSearchCategory === cat.id;
+                          return (
+                            <button
+                              key={cat.id}
+                              onClick={() => setAccSearchCategory(isSelected ? null : cat.id)}
+                              className={`flex-shrink-0 px-3 py-1 rounded-xl text-[9px] font-bold border flex items-center gap-1 transition-all duration-200 active:scale-95 ${
+                                isSelected
+                                  ? "bg-app-primary text-app-accent border-app-primary shadow-sm"
+                                  : "bg-slate-50 text-slate-400 border-slate-100 hover:bg-slate-100/50"
+                              }`}
+                            >
+                              <span className="text-xs leading-none">{cat.emoji}</span>
+                              <span>{cat.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Date Pickers - Single Row, No Labels */}
+                  <div className="mt-2.5 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-2xl border border-slate-100">
+                    <input
+                      type="date"
+                      value={accSearchStartDate}
+                      onChange={(e) => setAccSearchStartDate(e.target.value)}
+                      className="bg-transparent text-[10px] font-bold text-slate-600 outline-none w-full text-center"
+                    />
+                    <div className="w-px h-3 bg-slate-200" />
+                    <input
+                      type="date"
+                      value={accSearchEndDate}
+                      onChange={(e) => setAccSearchEndDate(e.target.value)}
+                      className="bg-transparent text-[10px] font-bold text-slate-600 outline-none w-full text-center"
+                    />
+                  </div>
+
+                  {/* Summary Row */}
+                  <div className="mt-2.5 grid grid-cols-2 gap-2">
+                    <div className="bg-emerald-50 rounded-2xl p-3 text-center">
+                      <p className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest mb-1">收入</p>
+                      <p className="font-mono font-bold text-emerald-600 text-sm">{isGlobalHidden ? "****" : accIncome.toLocaleString()}</p>
+                    </div>
+                    <div className="bg-red-50 rounded-2xl p-3 text-center">
+                      <p className="text-[9px] font-bold text-red-400 uppercase tracking-widest mb-1">支出</p>
+                      <p className="font-mono font-bold text-red-500 text-sm">{isGlobalHidden ? "****" : accExpense.toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Transaction List */}
+                <div className="overflow-y-auto flex-1 px-4 pb-6">
+                  {accTransactions.length === 0 ? (
+                    <div className="py-16 text-center">
+                      <p className="text-2xl mb-3">🧾</p>
+                      <p className="text-sm font-bold text-slate-300">此帳戶尚無交易紀錄</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {Object.entries(groups).map(([month, items]) => (
+                        <div key={month} className="space-y-2">
+                          {/* Month Header */}
+                          <div className="flex justify-between items-center px-1.5 pt-2">
+                            <span className="text-[10px] font-bold text-slate-400">{month}</span>
+                            <div className="flex gap-3 text-[10px] font-bold text-slate-300">
+                              <span>出: {items.filter(i => i.type === "expense").reduce((a, b) => a + b.amount, 0).toLocaleString()}</span>
+                              <span>入: {items.filter(i => i.type === "income").reduce((a, b) => a + b.amount, 0).toLocaleString()}</span>
+                            </div>
+                          </div>
+                          {/* Items using search modal layout */}
+                          <div className="space-y-1.5">
+                            {items.map(t => (
+                              <div
+                                key={t.id}
+                                onClick={() => {
+                                  setEditingTransaction(t);
+                                  setShowAccountDetail(null);
+                                }}
+                                className="flex items-center justify-between p-2.5 px-3 bg-slate-50 rounded-xl border border-slate-100 active:scale-[0.98] transition-all cursor-pointer"
+                              >
+                                <div className="flex items-center gap-0 overflow-hidden flex-1 mr-2">
+                                  <span className="text-[11px] font-mono font-bold text-slate-400 flex-shrink-0 w-11">
+                                    {(() => {
+                                      const d = getSafeDate(t.timestamp);
+                                      return `${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getDate().toString().padStart(2, '0')}`;
+                                    })()}
+                                  </span>
+                                  <div className="w-7 h-7 bg-white rounded-full flex items-center justify-center text-sm shadow-sm flex-shrink-0">
+                                    {getCategoryEmoji(t.category, customCategories)}
+                                  </div>
+                                  <div className="flex items-baseline gap-1.5 overflow-hidden ml-2">
+                                    <span className="text-[13px] font-bold text-slate-700 flex-shrink-0">
+                                      {getCategoryLabel(t.category, customCategories, t.type)}
+                                    </span>
+                                    <span className="text-[11px] text-slate-400 truncate italic">
+                                      {t.note}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="text-right flex-shrink-0 ml-1">
+                                  <p className={`text-[13px] font-mono font-bold ${t.type === 'income' ? 'text-emerald-500' : 'text-slate-800'}`}>
+                                    {t.type === 'expense' ? '-' : ''}{t.amount.toLocaleString()}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </div>
+          );
+        })()}
       </AnimatePresence>
     </div>
   );
