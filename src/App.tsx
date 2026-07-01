@@ -337,6 +337,7 @@ export default function App() {
   const [newBalance, setNewBalance] = useState("");
   const [newAccountColor, setNewAccountColor] = useState("#fcd34d");
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  const [selectedFromAccountId, setSelectedFromAccountId] = useState<string | null>(null);
   const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [showAccountDetail, setShowAccountDetail] = useState<BankAccount | null>(null);
@@ -961,6 +962,7 @@ export default function App() {
     setNoteValue("");
     setIsAdding(false);
     setSelectedToAccountId(null);
+    setSelectedFromAccountId(null);
   };
 
   const submitNewTransaction = async () => {
@@ -974,7 +976,7 @@ export default function App() {
       category: selectedCategory,
       note: noteValue,
       date: selectedDate,
-      accountId: selectedAccountId,
+      accountId: transactionType === "transfer" ? selectedFromAccountId : selectedAccountId,
       toAccountId: selectedToAccountId
     };
 
@@ -1113,8 +1115,8 @@ export default function App() {
     const filtered = transactions.filter(t => {
       const d = getSafeDate(t.timestamp);
       return d >= sD && d <= eD &&
-             (t.type === 'income' || t.type === 'expense') &&
-             t.accountId === showAccountDetail.id;
+        (t.type === 'income' || t.type === 'expense') &&
+        t.accountId === showAccountDetail.id;
     });
 
     const categorySet = new Set<string>();
@@ -1147,8 +1149,8 @@ export default function App() {
       .filter(t => {
         const d = getSafeDate(t.timestamp);
         return d >= sD && d <= eD && t.note && t.note.trim() !== "" &&
-               (t.type === 'income' || t.type === 'expense') &&
-               t.accountId === showAccountDetail.id;
+          (t.type === 'income' || t.type === 'expense') &&
+          t.accountId === showAccountDetail.id;
       })
       .sort((a, b) => getSafeDate(b.timestamp).getTime() - getSafeDate(a.timestamp).getTime());
 
@@ -2429,13 +2431,13 @@ export default function App() {
               <button
                 onClick={resetEntry}
                 className={`text-slate-400 font-bold uppercase tracking-wider transition-all ${(profile?.categoryColumns === 3) ? "text-base" :
-                    (profile?.categoryColumns === 4) ? "text-sm" : "text-xs"
+                  (profile?.categoryColumns === 4) ? "text-sm" : "text-xs"
                   }`}
               >
                 取消
               </button>
               <div className={`flex bg-slate-100 p-1 rounded-full transition-all ${(profile?.categoryColumns === 3) ? "w-64" :
-                  (profile?.categoryColumns === 4) ? "w-56" : "w-48"
+                (profile?.categoryColumns === 4) ? "w-56" : "w-48"
                 }`}>
                 <button
                   onClick={() => {
@@ -2462,6 +2464,8 @@ export default function App() {
                     setTransactionType("transfer");
                     setSelectedCategory("Others");
                     setNoteValue("");
+                    setSelectedFromAccountId(null);
+                    setSelectedToAccountId(null);
                   }}
                   className={`flex-1 py-1 font-bold rounded-full transition-all ${transactionType === "transfer" ? "bg-white shadow-sm text-blue-500" : "text-slate-400"
                     } ${(profile?.categoryColumns === 3) ? "text-xs py-2" :
@@ -2482,7 +2486,7 @@ export default function App() {
                         <ArrowUpRight size={13} />
                       </div>
                       <span>從此帳戶轉出</span>
-                      {selectedAccountId && (
+                      {selectedFromAccountId && (
                         <span className="ml-auto text-[10px] bg-red-100/50 text-red-600 px-2.5 py-0.5 rounded-full font-bold">
                           已選擇
                         </span>
@@ -2491,20 +2495,19 @@ export default function App() {
 
                     <div className="flex flex-wrap gap-2">
                       {accounts.map(acc => {
-                        const isSelected = selectedAccountId === acc.id;
+                        const isSelected = selectedFromAccountId === acc.id;
                         const isDisabled = selectedToAccountId === acc.id;
                         return (
                           <button
                             key={`from-${acc.id}`}
                             disabled={isDisabled}
-                            onClick={() => setSelectedAccountId(acc.id!)}
-                            className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all duration-200 ${
-                              isSelected
+                            onClick={() => setSelectedFromAccountId(acc.id!)}
+                            className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all duration-200 ${isSelected
                                 ? 'shadow-md shadow-slate-200 scale-105 z-10'
                                 : isDisabled
-                                ? 'bg-slate-100 text-slate-300 border-slate-100 cursor-not-allowed opacity-30'
-                                : 'bg-white text-slate-600 border-slate-100 hover:border-slate-200 active:scale-95'
-                            }`}
+                                  ? 'bg-slate-100 text-slate-300 border-slate-100 cursor-not-allowed opacity-30'
+                                  : 'bg-white text-slate-600 border-slate-100 hover:border-slate-200 active:scale-95'
+                              }`}
                             style={isSelected ? { backgroundColor: acc.color, color: '#fff', borderColor: acc.color } : {}}
                           >
                             {acc.name}
@@ -2531,19 +2534,18 @@ export default function App() {
                     <div className="flex flex-wrap gap-2">
                       {accounts.map(acc => {
                         const isSelected = selectedToAccountId === acc.id;
-                        const isDisabled = selectedAccountId === acc.id;
+                        const isDisabled = selectedFromAccountId === acc.id;
                         return (
                           <button
                             key={`to-${acc.id}`}
                             disabled={isDisabled}
                             onClick={() => setSelectedToAccountId(acc.id!)}
-                            className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all duration-200 ${
-                              isSelected
+                            className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all duration-200 ${isSelected
                                 ? 'shadow-md shadow-slate-200 scale-105 z-10'
                                 : isDisabled
-                                ? 'bg-slate-100 text-slate-300 border-slate-100 cursor-not-allowed opacity-30'
-                                : 'bg-white text-slate-600 border-slate-100 hover:border-slate-200 active:scale-95'
-                            }`}
+                                  ? 'bg-slate-100 text-slate-300 border-slate-100 cursor-not-allowed opacity-30'
+                                  : 'bg-white text-slate-600 border-slate-100 hover:border-slate-200 active:scale-95'
+                              }`}
                             style={isSelected ? { backgroundColor: acc.color, color: '#fff', borderColor: acc.color } : {}}
                           >
                             {acc.name}
@@ -2625,7 +2627,7 @@ export default function App() {
                     <button
                       key={acc.id}
                       onClick={() => setSelectedAccountId(acc.id!)}
-                      className={`flex-shrink-0 px-4 py-2 rounded-2xl text-[10px] font-bold transition-all border flex items-center gap-2 ${selectedAccountId === acc.id ? 'bg-app-primary text-app-accent border-app-primary shadow-md shadow-app-primary/20' : 'bg-slate-50 text-slate-400 border-slate-100'}`}
+                      className={`flex-shrink-0 px-4 py-2 rounded-2xl text-[10px] font-bold transition-all border flex items-center gap-2 ${selectedAccountId === acc.id ? 'bg-app-primary text-app-accent border-app-primary shadow-md shadow-slate-200 scale-105' : 'bg-slate-50 text-slate-400 border-slate-100'}`}
                       style={selectedAccountId === acc.id ? { backgroundColor: acc.color, color: '#fff', borderColor: acc.color } : {}}
                     >
                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: selectedAccountId === acc.id ? '#fff' : acc.color }} />
@@ -2814,7 +2816,7 @@ export default function App() {
                       <button
                         key={acc.id}
                         onClick={() => setEditingTransaction({ ...editingTransaction, accountId: acc.id })}
-                        className={`flex-shrink-0 px-4 py-2 rounded-xl text-[10px] font-bold border flex items-center gap-2 transition-all ${editingTransaction.accountId === acc.id ? 'bg-app-primary text-app-accent border-app-primary shadow-md shadow-app-primary/20' : 'bg-slate-50 text-slate-400 border-slate-100'}`}
+                        className={`flex-shrink-0 px-4 py-2 rounded-xl text-[10px] font-bold border flex items-center gap-2 transition-all ${editingTransaction.accountId === acc.id ? 'bg-app-primary text-app-accent border-app-primary shadow-md shadow-slate-200 scale-105' : 'bg-slate-50 text-slate-400 border-slate-100'}`}
                         style={editingTransaction.accountId === acc.id ? { backgroundColor: acc.color, color: '#fff', borderColor: acc.color } : {}}
                       >
                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: editingTransaction.accountId === acc.id ? '#fff' : acc.color }} />
@@ -3076,11 +3078,10 @@ export default function App() {
                   <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
                     <button
                       onClick={() => setSearchCategory(null)}
-                      className={`flex-shrink-0 px-3.5 py-1.5 rounded-xl text-[10px] font-bold border transition-all duration-200 active:scale-95 ${
-                        searchCategory === null
+                      className={`flex-shrink-0 px-3.5 py-1.5 rounded-xl text-[10px] font-bold border transition-all duration-200 active:scale-95 ${searchCategory === null
                           ? "bg-app-primary text-app-accent border-app-primary shadow-md shadow-app-primary/20 scale-105"
                           : "bg-slate-50 text-slate-400 border-slate-100 hover:bg-slate-100/50"
-                      }`}
+                        }`}
                     >
                       📁 全部 ({availableCategories.length})
                     </button>
@@ -3090,11 +3091,10 @@ export default function App() {
                         <button
                           key={cat.id}
                           onClick={() => setSearchCategory(isSelected ? null : cat.id)}
-                          className={`flex-shrink-0 px-3.5 py-1.5 rounded-xl text-[10px] font-bold border flex items-center gap-1.5 transition-all duration-200 active:scale-95 ${
-                            isSelected
+                          className={`flex-shrink-0 px-3.5 py-1.5 rounded-xl text-[10px] font-bold border flex items-center gap-1.5 transition-all duration-200 active:scale-95 ${isSelected
                               ? "bg-app-primary text-app-accent border-app-primary shadow-md shadow-app-primary/20 scale-105"
                               : "bg-slate-50 text-slate-400 border-slate-100 hover:bg-slate-100/50"
-                          }`}
+                            }`}
                         >
                           <span className="text-xs leading-none">{cat.emoji}</span>
                           <span>{cat.name}</span>
@@ -3735,11 +3735,10 @@ export default function App() {
                       <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
                         <button
                           onClick={() => setAccSearchCategory(null)}
-                          className={`flex-shrink-0 px-3 py-1 rounded-xl text-[9px] font-bold border transition-all duration-200 active:scale-95 ${
-                            accSearchCategory === null
+                          className={`flex-shrink-0 px-3 py-1 rounded-xl text-[9px] font-bold border transition-all duration-200 active:scale-95 ${accSearchCategory === null
                               ? "bg-app-primary text-app-accent border-app-primary shadow-sm"
                               : "bg-slate-50 text-slate-400 border-slate-100 hover:bg-slate-100/50"
-                          }`}
+                            }`}
                         >
                           📁 全部 ({accAvailableCategories.length})
                         </button>
@@ -3749,11 +3748,10 @@ export default function App() {
                             <button
                               key={cat.id}
                               onClick={() => setAccSearchCategory(isSelected ? null : cat.id)}
-                              className={`flex-shrink-0 px-3 py-1 rounded-xl text-[9px] font-bold border flex items-center gap-1 transition-all duration-200 active:scale-95 ${
-                                isSelected
+                              className={`flex-shrink-0 px-3 py-1 rounded-xl text-[9px] font-bold border flex items-center gap-1 transition-all duration-200 active:scale-95 ${isSelected
                                   ? "bg-app-primary text-app-accent border-app-primary shadow-sm"
                                   : "bg-slate-50 text-slate-400 border-slate-100 hover:bg-slate-100/50"
-                              }`}
+                                }`}
                             >
                               <span className="text-xs leading-none">{cat.emoji}</span>
                               <span>{cat.name}</span>
