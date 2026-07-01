@@ -50,7 +50,9 @@ import {
   Search,
   AlertCircle,
   ArrowRightLeft,
-  Clock
+  Clock,
+  ArrowUpRight,
+  ArrowDownLeft
 } from "lucide-react";
 import {
   PieChart as RePieChart,
@@ -2472,40 +2474,82 @@ export default function App() {
 
             <main className="flex-1 overflow-y-auto px-4 py-2">
               {transactionType === "transfer" ? (
-                <div className="h-full flex flex-col justify-center items-center gap-8 py-10">
-                  <div className="w-full space-y-4">
-                    <p className="text-center text-xs font-bold text-slate-300 uppercase tracking-widest">從此帳戶轉出</p>
-                    <div className="flex flex-wrap justify-center gap-3">
-                      {accounts.map(acc => (
-                        <button
-                          key={`from-${acc.id}`}
-                          onClick={() => setSelectedAccountId(acc.id!)}
-                          className={`px-5 py-3 rounded-2xl text-xs font-bold border transition-all ${selectedAccountId === acc.id ? 'bg-app-primary text-app-accent border-app-primary shadow-lg shadow-app-primary/20 scale-105' : 'bg-slate-50 text-slate-400 border-slate-100 opacity-60'}`}
-                          style={selectedAccountId === acc.id ? { backgroundColor: acc.color, color: '#fff', borderColor: acc.color } : {}}
-                        >
-                          {acc.name}
-                        </button>
-                      ))}
+                <div className="flex flex-col gap-4 py-2 w-full max-w-md mx-auto">
+                  {/* FROM ACCOUNT BLOCK */}
+                  <div className="bg-slate-50/60 border border-slate-100 rounded-2xl p-4 flex flex-col gap-3 transition-all duration-300">
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-400 tracking-wider">
+                      <div className="w-5 h-5 rounded-full bg-red-50 flex items-center justify-center text-red-500">
+                        <ArrowUpRight size={13} />
+                      </div>
+                      <span>從此帳戶轉出</span>
+                      {selectedAccountId && (
+                        <span className="ml-auto text-[10px] bg-red-100/50 text-red-600 px-2.5 py-0.5 rounded-full font-bold">
+                          已選擇
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {accounts.map(acc => {
+                        const isSelected = selectedAccountId === acc.id;
+                        const isDisabled = selectedToAccountId === acc.id;
+                        return (
+                          <button
+                            key={`from-${acc.id}`}
+                            disabled={isDisabled}
+                            onClick={() => setSelectedAccountId(acc.id!)}
+                            className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all duration-200 ${
+                              isSelected
+                                ? 'shadow-md shadow-slate-200 scale-105 z-10'
+                                : isDisabled
+                                ? 'bg-slate-100 text-slate-300 border-slate-100 cursor-not-allowed opacity-30'
+                                : 'bg-white text-slate-600 border-slate-100 hover:border-slate-200 active:scale-95'
+                            }`}
+                            style={isSelected ? { backgroundColor: acc.color, color: '#fff', borderColor: acc.color } : {}}
+                          >
+                            {acc.name}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
-                    <ChevronDown size={24} />
-                  </div>
+                  {/* TO ACCOUNT BLOCK */}
+                  <div className="bg-slate-50/60 border border-slate-100 rounded-2xl p-4 flex flex-col gap-3 transition-all duration-300">
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-400 tracking-wider">
+                      <div className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500">
+                        <ArrowDownLeft size={13} />
+                      </div>
+                      <span>轉入此帳戶</span>
+                      {selectedToAccountId && (
+                        <span className="ml-auto text-[10px] bg-emerald-100/50 text-emerald-600 px-2.5 py-0.5 rounded-full font-bold">
+                          已選擇
+                        </span>
+                      )}
+                    </div>
 
-                  <div className="w-full space-y-4">
-                    <p className="text-center text-xs font-bold text-slate-300 uppercase tracking-widest">轉入此帳戶</p>
-                    <div className="flex flex-wrap justify-center gap-3">
-                      {accounts.map(acc => (
-                        <button
-                          key={`to-${acc.id}`}
-                          onClick={() => setSelectedToAccountId(acc.id!)}
-                          className={`px-5 py-3 rounded-2xl text-xs font-bold border transition-all ${selectedToAccountId === acc.id ? 'bg-app-primary text-app-accent border-app-primary shadow-lg shadow-app-primary/20 scale-105' : 'bg-slate-50 text-slate-400 border-slate-100 opacity-60'}`}
-                          style={selectedToAccountId === acc.id ? { backgroundColor: acc.color, color: '#fff', borderColor: acc.color } : {}}
-                        >
-                          {acc.name}
-                        </button>
-                      ))}
+                    <div className="flex flex-wrap gap-2">
+                      {accounts.map(acc => {
+                        const isSelected = selectedToAccountId === acc.id;
+                        const isDisabled = selectedAccountId === acc.id;
+                        return (
+                          <button
+                            key={`to-${acc.id}`}
+                            disabled={isDisabled}
+                            onClick={() => setSelectedToAccountId(acc.id!)}
+                            className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all duration-200 ${
+                              isSelected
+                                ? 'shadow-md shadow-slate-200 scale-105 z-10'
+                                : isDisabled
+                                ? 'bg-slate-100 text-slate-300 border-slate-100 cursor-not-allowed opacity-30'
+                                : 'bg-white text-slate-600 border-slate-100 hover:border-slate-200 active:scale-95'
+                            }`}
+                            style={isSelected ? { backgroundColor: acc.color, color: '#fff', borderColor: acc.color } : {}}
+                          >
+                            {acc.name}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
