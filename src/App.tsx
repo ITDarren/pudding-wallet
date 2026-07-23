@@ -164,11 +164,12 @@ const getCategoryEmoji = (category: string, customCategories: CustomCategory[] =
     "Food": "🍽️",
     "Shopping": "🛍️",
     "Transport": "🚗",
-    "Social": "👥",
-    "Bills": "📄",
     "Living": "🧻",
+    "Clothing": "👕",
+    "Bills": "📄",
     "Beauty": "💄",
     "Entertainment": "🎤",
+    "Social": "👥",
     "Travel": "✈️",
     "Home": "🏘️",
     "Repair": "🔧",
@@ -179,7 +180,7 @@ const getCategoryEmoji = (category: string, customCategories: CustomCategory[] =
     "Salary": "💵",
     "Bonus": "🏆",
     "Investment": "📈",
-    "SideHustle": "🚲",
+    "SideHustle": "☕",
     "Gift": "🧧",
     "Others": "📦"
   };
