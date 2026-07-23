@@ -329,6 +329,7 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState(getLocalISODate());
   const [viewMonth, setViewMonth] = useState(getLocalISODate().slice(0, 7)); // YYYY-MM
   const [showAddCategory, setShowAddCategory] = useState<"expense" | "income" | null>(null);
+  const [editingCategory, setEditingCategory] = useState<CustomCategory | null>(null);
   const [newCatName, setNewCatName] = useState("");
   const [newCatEmoji, setNewCatEmoji] = useState("✨");
   const [showAddAccount, setShowAddAccount] = useState(false);
@@ -653,6 +654,18 @@ export default function App() {
       await addDoc(collection(db, "users", user.uid, "categories"), newCat);
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, `users/${user.uid}/categories`);
+    }
+  };
+
+  const handleUpdateCustomCategory = async (categoryId: string, name: string, emoji: string) => {
+    if (!user) return;
+    try {
+      await updateDoc(doc(db, "users", user.uid, "categories", categoryId), {
+        name,
+        emoji
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `users/${user.uid}/categories/${categoryId}`);
     }
   };
 
@@ -2233,9 +2246,17 @@ export default function App() {
                                 const filteredCats = customCategories.filter(c => c.type === catManageType);
                                 return filteredCats.map((cat, index) => (
                                   <div key={cat.id} className="flex items-center justify-between p-2 px-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                                    <div className="flex items-center gap-2 overflow-hidden">
+                                    <div
+                                      onClick={() => {
+                                        setNewCatName(cat.name);
+                                        setNewCatEmoji(cat.emoji);
+                                        setEditingCategory(cat);
+                                      }}
+                                      className="flex items-center gap-2 overflow-hidden cursor-pointer hover:opacity-85 active:scale-95 transition-all"
+                                      title="修改分類名稱"
+                                    >
                                       <span className="text-lg flex-shrink-0">{cat.emoji}</span>
-                                      <span className="text-xs font-medium text-slate-600 truncate">{cat.name}</span>
+                                      <span className="text-xs font-medium text-slate-600 truncate hover:text-blue-500 transition-colors">{cat.name}</span>
                                     </div>
                                     <div className="flex items-center gap-0.5">
                                       <button
@@ -2503,10 +2524,10 @@ export default function App() {
                             disabled={isDisabled}
                             onClick={() => setSelectedFromAccountId(acc.id!)}
                             className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all duration-200 ${isSelected
-                                ? 'shadow-md shadow-slate-200 scale-105 z-10'
-                                : isDisabled
-                                  ? 'bg-slate-100 text-slate-300 border-slate-100 cursor-not-allowed opacity-30'
-                                  : 'bg-white text-slate-600 border-slate-100 hover:border-slate-200 active:scale-95'
+                              ? 'shadow-md shadow-slate-200 scale-105 z-10'
+                              : isDisabled
+                                ? 'bg-slate-100 text-slate-300 border-slate-100 cursor-not-allowed opacity-30'
+                                : 'bg-white text-slate-600 border-slate-100 hover:border-slate-200 active:scale-95'
                               }`}
                             style={isSelected ? { backgroundColor: acc.color, color: '#fff', borderColor: acc.color } : {}}
                           >
@@ -2541,10 +2562,10 @@ export default function App() {
                             disabled={isDisabled}
                             onClick={() => setSelectedToAccountId(acc.id!)}
                             className={`px-4 py-2.5 rounded-xl text-xs font-bold border transition-all duration-200 ${isSelected
-                                ? 'shadow-md shadow-slate-200 scale-105 z-10'
-                                : isDisabled
-                                  ? 'bg-slate-100 text-slate-300 border-slate-100 cursor-not-allowed opacity-30'
-                                  : 'bg-white text-slate-600 border-slate-100 hover:border-slate-200 active:scale-95'
+                              ? 'shadow-md shadow-slate-200 scale-105 z-10'
+                              : isDisabled
+                                ? 'bg-slate-100 text-slate-300 border-slate-100 cursor-not-allowed opacity-30'
+                                : 'bg-white text-slate-600 border-slate-100 hover:border-slate-200 active:scale-95'
                               }`}
                             style={isSelected ? { backgroundColor: acc.color, color: '#fff', borderColor: acc.color } : {}}
                           >
@@ -3079,8 +3100,8 @@ export default function App() {
                     <button
                       onClick={() => setSearchCategory(null)}
                       className={`flex-shrink-0 px-3.5 py-1.5 rounded-xl text-[10px] font-bold border transition-all duration-200 active:scale-95 ${searchCategory === null
-                          ? "bg-app-primary text-app-accent border-app-primary shadow-md shadow-app-primary/20 scale-105"
-                          : "bg-slate-50 text-slate-400 border-slate-100 hover:bg-slate-100/50"
+                        ? "bg-app-primary text-app-accent border-app-primary shadow-md shadow-app-primary/20 scale-105"
+                        : "bg-slate-50 text-slate-400 border-slate-100 hover:bg-slate-100/50"
                         }`}
                     >
                       📁 全部 ({availableCategories.length})
@@ -3092,8 +3113,8 @@ export default function App() {
                           key={cat.id}
                           onClick={() => setSearchCategory(isSelected ? null : cat.id)}
                           className={`flex-shrink-0 px-3.5 py-1.5 rounded-xl text-[10px] font-bold border flex items-center gap-1.5 transition-all duration-200 active:scale-95 ${isSelected
-                              ? "bg-app-primary text-app-accent border-app-primary shadow-md shadow-app-primary/20 scale-105"
-                              : "bg-slate-50 text-slate-400 border-slate-100 hover:bg-slate-100/50"
+                            ? "bg-app-primary text-app-accent border-app-primary shadow-md shadow-app-primary/20 scale-105"
+                            : "bg-slate-50 text-slate-400 border-slate-100 hover:bg-slate-100/50"
                             }`}
                         >
                           <span className="text-xs leading-none">{cat.emoji}</span>
@@ -3444,7 +3465,7 @@ export default function App() {
                     <h3 className="text-xl font-bold text-slate-800">
                       新增{showAddCategory === "expense" ? "支出" : "收入"}分類
                     </h3>
-                    <p className="text-xs text-slate-400 mt-1">為您的新分類命名並選擇一個圖示</p>
+                    <p className="text-xs text-slate-400 mt-1">為新分類命名並選擇一個圖示</p>
                   </div>
 
                   <div className="space-y-3">
@@ -3509,6 +3530,102 @@ export default function App() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Edit Category Modal */}
+      <AnimatePresence>
+        {editingCategory && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setEditingCategory(null)}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-sm bg-white rounded-[32px] p-8 shadow-2xl overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 p-4">
+                <button onClick={() => setEditingCategory(null)} className="p-2 text-slate-300 hover:text-slate-500 transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="flex flex-col items-center gap-6">
+                <div className="w-full space-y-4">
+                  <div className="text-center">
+                    <h3 className="text-xl font-bold text-slate-800">
+                      修改{editingCategory.type === "expense" ? "支出" : "收入"}分類
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1">修改分類名稱與圖示</p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">圖示 Emoji</label>
+                      <input
+                        type="search"
+                        value={newCatEmoji}
+                        onChange={(e) => setNewCatEmoji(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-100 p-3 rounded-2xl text-center text-2xl focus:ring-2 focus:ring-app-primary/20 outline-none transition-all"
+                        placeholder="請輸入一個 Emoji"
+                      />
+
+                      <div className="mt-3 flex flex-wrap gap-2 justify-center max-h-32 overflow-y-auto p-1.5 bg-slate-50/50 rounded-2xl border border-slate-100/50">
+                        {[
+                          "🍔", "🍜", "☕", "🍺", "🍦", "🍎",
+                          "🚗", "🚌", "🚲", "✈️", "⛽", "🚆",
+                          "🏠", "🛍️", "🎁", "💊", "🧼", "🧺",
+                          "🎮", "🎬", "🎵", "⚽", "📚", "🏖️",
+                          "💰", "💳", "📈", "💻", "🏢", "📧",
+                          "✨", "🏮", "🎈", "🐱", "🐶", "🌺"
+                        ].map(emoji => (
+                          <button
+                            key={emoji}
+                            type="button"
+                            onClick={() => setNewCatEmoji(emoji)}
+                            className={`w-9 h-9 flex items-center justify-center rounded-xl text-xl transition-all ${newCatEmoji === emoji ? "bg-app-primary text-app-accent scale-110 shadow-md shadow-app-primary/20" : "bg-white hover:bg-slate-100 border border-slate-100"}`}
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-1.5 block">分類名稱</label>
+                      <input
+                        type="search"
+                        value={newCatName}
+                        onChange={(e) => setNewCatName(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-100 p-3 rounded-2xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-app-primary/20 outline-none transition-all placeholder:text-slate-300"
+                        placeholder="例如：餐飲、房租、薪水..."
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      if (newCatName && newCatEmoji && editingCategory.id) {
+                        handleUpdateCustomCategory(editingCategory.id, newCatName, newCatEmoji);
+                        setEditingCategory(null);
+                      }
+                    }}
+                    disabled={!newCatName || !newCatEmoji}
+                    className="w-full bg-app-primary text-app-accent py-3.5 rounded-2xl font-bold shadow-lg shadow-app-primary/20 active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale"
+                  >
+                    確認修改
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
 
       <AnimatePresence>
         {showCashTransfer && (
@@ -3736,8 +3853,8 @@ export default function App() {
                         <button
                           onClick={() => setAccSearchCategory(null)}
                           className={`flex-shrink-0 px-3 py-1 rounded-xl text-[9px] font-bold border transition-all duration-200 active:scale-95 ${accSearchCategory === null
-                              ? "bg-app-primary text-app-accent border-app-primary shadow-sm"
-                              : "bg-slate-50 text-slate-400 border-slate-100 hover:bg-slate-100/50"
+                            ? "bg-app-primary text-app-accent border-app-primary shadow-sm"
+                            : "bg-slate-50 text-slate-400 border-slate-100 hover:bg-slate-100/50"
                             }`}
                         >
                           📁 全部 ({accAvailableCategories.length})
@@ -3749,8 +3866,8 @@ export default function App() {
                               key={cat.id}
                               onClick={() => setAccSearchCategory(isSelected ? null : cat.id)}
                               className={`flex-shrink-0 px-3 py-1 rounded-xl text-[9px] font-bold border flex items-center gap-1 transition-all duration-200 active:scale-95 ${isSelected
-                                  ? "bg-app-primary text-app-accent border-app-primary shadow-sm"
-                                  : "bg-slate-50 text-slate-400 border-slate-100 hover:bg-slate-100/50"
+                                ? "bg-app-primary text-app-accent border-app-primary shadow-sm"
+                                : "bg-slate-50 text-slate-400 border-slate-100 hover:bg-slate-100/50"
                                 }`}
                             >
                               <span className="text-xs leading-none">{cat.emoji}</span>
