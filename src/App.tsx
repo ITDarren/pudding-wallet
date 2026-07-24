@@ -2203,12 +2203,12 @@ export default function App() {
                               const labels = catManageType === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
 
                               return sortedFixedIds.map((id, index) => (
-                                <div key={id} className="flex items-center justify-between p-2 px-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                                  <div className="flex items-center gap-2 overflow-hidden">
+                                <div key={id} className="flex flex-col gap-1.5 p-2 px-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                                  <div className="flex items-center gap-2 overflow-hidden w-full">
                                     <span className="text-lg flex-shrink-0">{getCategoryEmoji(id)}</span>
                                     <span className="text-xs font-medium text-slate-600 truncate">{labels[id]}</span>
                                   </div>
-                                  <div className="flex items-center gap-0.5">
+                                  <div className="flex items-center justify-end gap-0.5 w-full">
                                     <button
                                       onClick={() => toggleCategoryVisibility(id)}
                                       className={`p-1 transition-colors ${profile?.hiddenCategoryIds?.includes(id) ? 'text-blue-500' : 'text-slate-400 hover:text-blue-500'}`}
@@ -2246,20 +2246,20 @@ export default function App() {
                               {(() => {
                                 const filteredCats = customCategories.filter(c => c.type === catManageType);
                                 return filteredCats.map((cat, index) => (
-                                  <div key={cat.id} className="flex items-center justify-between p-2 px-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                                  <div key={cat.id} className="flex flex-col gap-1.5 p-2 px-2.5 bg-slate-50 rounded-xl border border-slate-100">
                                     <div
                                       onClick={() => {
                                         setNewCatName(cat.name);
                                         setNewCatEmoji(cat.emoji);
                                         setEditingCategory(cat);
                                       }}
-                                      className="flex items-center gap-2 overflow-hidden cursor-pointer hover:opacity-85 active:scale-95 transition-all"
+                                      className="flex items-center gap-2 overflow-hidden cursor-pointer hover:opacity-85 active:scale-95 transition-all w-full"
                                       title="修改分類名稱"
                                     >
                                       <span className="text-lg flex-shrink-0">{cat.emoji}</span>
                                       <span className="text-xs font-medium text-slate-600 truncate hover:text-blue-500 transition-colors">{cat.name}</span>
                                     </div>
-                                    <div className="flex items-center gap-0.5">
+                                    <div className="flex items-center justify-end gap-0.5 w-full">
                                       <button
                                         onClick={() => toggleCategoryVisibility(cat.id!)}
                                         className={`p-1 transition-colors ${profile?.hiddenCategoryIds?.includes(cat.id!) ? 'text-blue-500' : 'text-slate-400 hover:text-blue-500'}`}
