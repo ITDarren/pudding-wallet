@@ -2203,32 +2203,32 @@ export default function App() {
                               const labels = catManageType === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
 
                               return sortedFixedIds.map((id, index) => (
-                                <div key={id} className="flex flex-col gap-1.5 p-2 px-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                                  <div className="flex items-center gap-2 overflow-hidden w-full">
-                                    <span className="text-lg flex-shrink-0">{getCategoryEmoji(id)}</span>
-                                    <span className="text-xs font-medium text-slate-600 truncate">{labels[id]}</span>
+                                <div key={id} className="flex flex-col gap-1 p-1.5 px-2 bg-slate-50 rounded-xl border border-slate-100/80 hover:bg-slate-100/50 hover:shadow-xs transition-all duration-200">
+                                  <div className="flex items-center gap-1.5 overflow-hidden w-full">
+                                    <span className="text-base flex-shrink-0">{getCategoryEmoji(id)}</span>
+                                    <span className="text-xs font-semibold text-slate-700 truncate">{labels[id]}</span>
                                   </div>
-                                  <div className="flex items-center justify-end gap-0.5 w-full">
+                                  <div className="flex items-center justify-end gap-1 w-full mt-0.5">
                                     <button
                                       onClick={() => toggleCategoryVisibility(id)}
-                                      className={`p-1 transition-colors ${profile?.hiddenCategoryIds?.includes(id) ? 'text-blue-500' : 'text-slate-400 hover:text-blue-500'}`}
+                                      className={`p-1 rounded-md transition-colors hover:bg-slate-200/50 ${profile?.hiddenCategoryIds?.includes(id) ? 'text-blue-500' : 'text-slate-400 hover:text-blue-500'}`}
                                     >
-                                      {profile?.hiddenCategoryIds?.includes(id) ? <EyeOff size={14} /> : <Eye size={14} />}
+                                      {profile?.hiddenCategoryIds?.includes(id) ? <EyeOff size={13} /> : <Eye size={13} />}
                                     </button>
-                                    <div className="flex flex-col bg-slate-100 rounded-md p-0.5 ml-0.5">
+                                    <div className="flex bg-slate-200/40 rounded-md p-0.5 ml-0.5 gap-0.5">
                                       <button
                                         disabled={index === 0}
                                         onClick={() => handleMoveFixedCategory(id, catManageType, 'up')}
-                                        className="p-0 text-slate-300 hover:text-slate-600 disabled:opacity-20"
+                                        className="p-0.5 rounded text-slate-400 hover:text-slate-700 hover:bg-white disabled:opacity-20 transition-all"
                                       >
-                                        <ChevronUp size={14} />
+                                        <ChevronUp size={12} />
                                       </button>
                                       <button
                                         disabled={index === sortedFixedIds.length - 1}
                                         onClick={() => handleMoveFixedCategory(id, catManageType, 'down')}
-                                        className="p-0 text-slate-300 hover:text-slate-600 disabled:opacity-20"
+                                        className="p-0.5 rounded text-slate-400 hover:text-slate-700 hover:bg-white disabled:opacity-20 transition-all"
                                       >
-                                        <ChevronDown size={14} />
+                                        <ChevronDown size={12} />
                                       </button>
                                     </div>
                                   </div>
@@ -2246,25 +2246,25 @@ export default function App() {
                               {(() => {
                                 const filteredCats = customCategories.filter(c => c.type === catManageType);
                                 return filteredCats.map((cat, index) => (
-                                  <div key={cat.id} className="flex flex-col gap-1.5 p-2 px-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                                  <div key={cat.id} className="flex flex-col gap-1 p-1.5 px-2 bg-slate-50 rounded-xl border border-slate-100/80 hover:bg-slate-100/50 hover:shadow-xs transition-all duration-200">
                                     <div
                                       onClick={() => {
                                         setNewCatName(cat.name);
                                         setNewCatEmoji(cat.emoji);
                                         setEditingCategory(cat);
                                       }}
-                                      className="flex items-center gap-2 overflow-hidden cursor-pointer hover:opacity-85 active:scale-95 transition-all w-full"
+                                      className="flex items-center gap-1.5 overflow-hidden cursor-pointer hover:opacity-85 active:scale-95 transition-all w-full"
                                       title="修改分類名稱"
                                     >
-                                      <span className="text-lg flex-shrink-0">{cat.emoji}</span>
-                                      <span className="text-xs font-medium text-slate-600 truncate hover:text-blue-500 transition-colors">{cat.name}</span>
+                                      <span className="text-base flex-shrink-0">{cat.emoji}</span>
+                                      <span className="text-xs font-semibold text-slate-700 truncate hover:text-blue-500 transition-colors">{cat.name}</span>
                                     </div>
-                                    <div className="flex items-center justify-end gap-0.5 w-full">
+                                    <div className="flex items-center justify-end gap-1 w-full mt-0.5">
                                       <button
                                         onClick={() => toggleCategoryVisibility(cat.id!)}
-                                        className={`p-1 transition-colors ${profile?.hiddenCategoryIds?.includes(cat.id!) ? 'text-blue-500' : 'text-slate-400 hover:text-blue-500'}`}
+                                        className={`p-1 rounded-md transition-colors hover:bg-slate-200/50 ${profile?.hiddenCategoryIds?.includes(cat.id!) ? 'text-blue-500' : 'text-slate-400 hover:text-blue-500'}`}
                                       >
-                                        {profile?.hiddenCategoryIds?.includes(cat.id!) ? <EyeOff size={14} /> : <Eye size={14} />}
+                                        {profile?.hiddenCategoryIds?.includes(cat.id!) ? <EyeOff size={13} /> : <Eye size={13} />}
                                       </button>
                                       <button
                                         onClick={() => {
@@ -2276,24 +2276,24 @@ export default function App() {
                                           }
                                           setShowDeleteCatConfirm(cat.id!);
                                         }}
-                                        className="p-1 text-slate-400 hover:text-red-500 transition-colors ml-0.5"
+                                        className="p-1 rounded-md text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                                       >
-                                        <Trash2 size={14} />
+                                        <Trash2 size={13} />
                                       </button>
-                                      <div className="flex flex-col bg-slate-100 rounded-md p-0.5 ml-0.5">
+                                      <div className="flex bg-slate-200/40 rounded-md p-0.5 ml-0.5 gap-0.5">
                                         <button
                                           disabled={index === 0}
                                           onClick={() => handleMoveCategory(cat.id!, 'up')}
-                                          className="p-0 text-slate-300 hover:text-slate-600 disabled:opacity-20"
+                                          className="p-0.5 rounded text-slate-400 hover:text-slate-700 hover:bg-white disabled:opacity-20 transition-all"
                                         >
-                                          <ChevronUp size={14} />
+                                          <ChevronUp size={12} />
                                         </button>
                                         <button
                                           disabled={index === filteredCats.length - 1}
                                           onClick={() => handleMoveCategory(cat.id!, 'down')}
-                                          className="p-0 text-slate-300 hover:text-slate-600 disabled:opacity-20"
+                                          className="p-0.5 rounded text-slate-400 hover:text-slate-700 hover:bg-white disabled:opacity-20 transition-all"
                                         >
-                                          <ChevronDown size={14} />
+                                          <ChevronDown size={12} />
                                         </button>
                                       </div>
                                     </div>
