@@ -3342,7 +3342,7 @@ export default function App() {
 
                 return (
                   <>
-                    <div className="bg-slate-50 rounded-2xl p-4 mb-4 flex justify-between items-center border border-slate-100">
+                    <div className="bg-slate-50 rounded-2xl py-2 px-4 mb-4 flex justify-between items-center border border-slate-100">
                       <div>
                         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">累計金額</span>
                         <p className="text-2xl font-mono font-bold text-slate-800">
@@ -3375,7 +3375,7 @@ export default function App() {
                               className="flex items-center justify-between p-3 bg-slate-50/50 hover:bg-slate-50 active:scale-[0.99] rounded-2xl border border-slate-100/50 transition-all cursor-pointer"
                             >
                               <div className="flex items-center gap-3 overflow-hidden">
-                                <span className="text-[10px] font-mono font-bold text-slate-400 w-10 flex-shrink-0">
+                                <span className="text-[11px] font-mono font-bold text-slate-400 w-10 flex-shrink-0">
                                   {dateStr}
                                 </span>
                                 <div className="flex flex-col min-w-0">
@@ -3383,20 +3383,20 @@ export default function App() {
                                     const acc = accounts.find(a => a.id === t.accountId);
                                     return (
                                       <span
-                                        className="text-[7px] w-max px-1 rounded text-white font-bold mb-0.5"
+                                        className="text-[8px] w-max px-1 rounded text-white font-bold mb-0.5"
                                         style={{ backgroundColor: acc?.color || '#94a3b8' }}
                                       >
                                         {acc?.name || "未知"}
                                       </span>
                                     );
                                   })()}
-                                  <span className="text-xs font-semibold text-slate-700 truncate">
+                                  <span className="text-[13px] font-semibold text-slate-700 truncate">
                                     {t.note}
                                   </span>
                                 </div>
                               </div>
                               <div className="flex items-center gap-2 flex-shrink-0">
-                                <span className={`text-xs font-mono font-bold ${t.type === "income" ? "text-emerald-500" : "text-slate-800"}`}>
+                                <span className={`text-[13px] font-mono font-bold ${t.type === "income" ? "text-emerald-500" : "text-slate-800"}`}>
                                   {t.type === "income" ? "" : "-"}{t.amount.toLocaleString()}
                                 </span>
                               </div>
