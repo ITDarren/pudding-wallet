@@ -2967,7 +2967,7 @@ export default function App() {
                     }}
                     className="flex-[0.5] bg-red-500 text-white font-bold rounded-2xl py-2.5 px-4 shadow-lg shadow-red-200 active:scale-95 transition-all flex items-center justify-center gap-1.5"
                   >
-                    <span>刪除</span>
+                    <Trash2 size={20} />
                   </button>
                   <button
                     onClick={() => handleUpdateTransaction(editingTransaction)}
