@@ -1513,64 +1513,99 @@ export default function App() {
                     exit={{ opacity: 0 }}
                     className="space-y-6 pt-6 pb-10"
                   >
-                    {Object.entries(groupTransactionsByDate()).map(([date, items]) => (
-                      <div key={date} className="space-y-2">
-                        <div className="flex justify-between items-center px-2">
-                          <span className="text-[10px] font-bold text-slate-400">{date}</span>
-                          <div className="flex gap-4 text-[10px] font-bold text-slate-300">
-                            <span>出: {items.filter(i => i.type === "expense").reduce((a, b) => a + b.amount, 0).toLocaleString()}</span>
-                            <span>入: {items.filter(i => i.type === "income").reduce((a, b) => a + b.amount, 0).toLocaleString()}</span>
+                    {Object.keys(groupTransactionsByDate()).length === 0 ? (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        className="flex flex-col items-center justify-center py-16 px-6 text-center bg-white rounded-3xl border border-slate-100 shadow-sm mt-4 relative overflow-hidden"
+                      >
+                        <div className="absolute -top-10 -left-10 w-24 h-24 bg-amber-100/40 rounded-full blur-xl animate-pulse" />
+                        <div className="absolute -bottom-10 -right-10 w-24 h-24 bg-yellow-100/40 rounded-full blur-xl animate-pulse" style={{ animationDelay: '1s' }} />
+
+                        <motion.div
+                          animate={{
+                            y: [0, -8, 0],
+                            rotate: [0, 3, -3, 0]
+                          }}
+                          transition={{
+                            repeat: Infinity,
+                            duration: 3.5,
+                            ease: "easeInOut"
+                          }}
+                          className="relative flex items-center justify-center w-20 h-20 mb-5 rounded-3xl bg-gradient-to-br from-amber-50 to-yellow-100/50 shadow-inner"
+                        >
+                          <span className="text-4xl select-none filter drop-shadow-sm">🍮</span>
+                          <span className="absolute -top-1.5 -right-1.5 text-lg animate-bounce">✨</span>
+                          <span className="absolute -bottom-1 -left-1 text-md" style={{ animationDelay: '0.8s' }}>🎈</span>
+                        </motion.div>
+
+                        <h3 className="text-base font-bold text-slate-800 mb-2 flex items-center gap-1 justify-center">
+                          {(() => {
+                            const [_, m] = viewMonth.split('-').map(Number);
+                            return `全新的 ${m} 月`;
+                          })()}
+                        </h3>
+                      </motion.div>
+                    ) : (
+                      Object.entries(groupTransactionsByDate()).map(([date, items]) => (
+                        <div key={date} className="space-y-2">
+                          <div className="flex justify-between items-center px-2">
+                            <span className="text-[10px] font-bold text-slate-400">{date}</span>
+                            <div className="flex gap-4 text-[10px] font-bold text-slate-300">
+                              <span>出: {items.filter(i => i.type === "expense").reduce((a, b) => a + b.amount, 0).toLocaleString()}</span>
+                              <span>入: {items.filter(i => i.type === "income").reduce((a, b) => a + b.amount, 0).toLocaleString()}</span>
+                            </div>
+                          </div>
+                          <div className="bg-white rounded-3xl border border-slate-100 divide-y divide-slate-50 overflow-hidden shadow-sm">
+                            {items.map(t => (
+                              <div key={t.id} className="flex items-center justify-between py-2.5 px-4 active:bg-slate-50 transition-colors">
+                                <div className="flex items-center gap-4">
+                                  <div className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-lg">
+                                    {getCategoryEmoji(t.category, customCategories)}
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <p className="text-sm font-bold text-slate-700">
+                                        {getCategoryDisplayName(t.category, t.type)}
+                                      </p>
+                                      <div className="flex items-center gap-1">
+                                        {t.accountId && (() => {
+                                          const acc = accounts.find(a => a.id === t.accountId);
+                                          return (
+                                            <span
+                                              className="text-[8px] px-1.5 py-0.5 rounded-md text-white font-bold"
+                                              style={{ backgroundColor: acc?.color || '#94a3b8' }}
+                                            >
+                                              {acc?.name || "未知"}
+                                            </span>
+                                          );
+                                        })()}
+                                      </div>
+                                    </div>
+                                    {t.note && (
+                                      <p className="text-[10px] text-slate-400 mt-0.5">{t.note}</p>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <span className={`font-mono font-bold ${t.type === "income" ? "text-emerald-500" : "text-slate-800"}`}>
+                                    {t.type === "income" ? "" : "-"}{t.amount.toLocaleString()}
+                                  </span>
+                                  <div className="flex items-center gap-1">
+                                    <button onClick={() => setEditingTransaction(t)} className="p-1.5 text-slate-400 hover:text-blue-500 transition-colors">
+                                      <Pencil size={14} />
+                                    </button>
+                                    <button onClick={() => setShowDeleteTransactionConfirm(t)} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
+                                      <Trash2 size={14} />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
-                        <div className="bg-white rounded-3xl border border-slate-100 divide-y divide-slate-50 overflow-hidden shadow-sm">
-                          {items.map(t => (
-                            <div key={t.id} className="flex items-center justify-between py-2.5 px-4 active:bg-slate-50 transition-colors">
-                              <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-lg">
-                                  {getCategoryEmoji(t.category, customCategories)}
-                                </div>
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <p className="text-sm font-bold text-slate-700">
-                                      {getCategoryDisplayName(t.category, t.type)}
-                                    </p>
-                                    <div className="flex items-center gap-1">
-                                      {t.accountId && (() => {
-                                        const acc = accounts.find(a => a.id === t.accountId);
-                                        return (
-                                          <span
-                                            className="text-[8px] px-1.5 py-0.5 rounded-md text-white font-bold"
-                                            style={{ backgroundColor: acc?.color || '#94a3b8' }}
-                                          >
-                                            {acc?.name || "未知"}
-                                          </span>
-                                        );
-                                      })()}
-                                    </div>
-                                  </div>
-                                  {t.note && (
-                                    <p className="text-[10px] text-slate-400 mt-0.5">{t.note}</p>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <span className={`font-mono font-bold ${t.type === "income" ? "text-emerald-500" : "text-slate-800"}`}>
-                                  {t.type === "income" ? "" : "-"}{t.amount.toLocaleString()}
-                                </span>
-                                <div className="flex items-center gap-1">
-                                  <button onClick={() => setEditingTransaction(t)} className="p-1.5 text-slate-400 hover:text-blue-500 transition-colors">
-                                    <Pencil size={14} />
-                                  </button>
-                                  <button onClick={() => setShowDeleteTransactionConfirm(t)} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
-                                    <Trash2 size={14} />
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </motion.div>
                 )}
 
