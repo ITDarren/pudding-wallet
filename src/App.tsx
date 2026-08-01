@@ -345,6 +345,7 @@ export default function App() {
   const [showAccountDetail, setShowAccountDetail] = useState<BankAccount | null>(null);
   const [accountDetailPage, setAccountDetailPage] = useState(1);
   const [showDeleteTransactionConfirm, setShowDeleteTransactionConfirm] = useState<Transaction | null>(null);
+  const [selectedStatsCategory, setSelectedStatsCategory] = useState<{ id: string; name: string; emoji: string; type: 'expense' | 'income' } | null>(null);
   const [showDeleteCatConfirm, setShowDeleteCatConfirm] = useState<string | null>(null);
   const [catHasTransactionsNotice, setCatHasTransactionsNotice] = useState<boolean>(false);
   const dateInputRef = useRef<HTMLInputElement>(null);
@@ -1935,21 +1936,36 @@ export default function App() {
                                 <div
                                   key={item.id}
                                   onClick={() => {
-                                    if (chartType === 'line' || chartType === 'bar') {
-                                      const newHidden = new Set(hiddenChartCategories);
-                                      if (newHidden.has(item.id)) {
-                                        newHidden.delete(item.id);
-                                      } else {
-                                        newHidden.add(item.id);
-                                      }
-                                      setHiddenChartCategories(newHidden);
-                                    }
+                                    setSelectedStatsCategory({
+                                      id: item.id,
+                                      name: item.name,
+                                      emoji: getCategoryEmoji(item.id, customCategories),
+                                      type: statsType
+                                    });
                                   }}
-                                  className={`bg-white py-3.5 px-5 rounded-[1.5rem] border border-slate-100 flex items-center justify-between shadow-sm active:scale-[0.98] transition-all ${chartType === 'line' || chartType === 'bar' ? 'cursor-pointer' : ''} ${isHidden ? 'opacity-30' : ''}`}
+                                  className={`bg-white py-3.5 px-5 rounded-[1.5rem] border border-slate-100 flex items-center justify-between shadow-sm active:scale-[0.98] transition-all cursor-pointer hover:border-slate-200/80 ${isHidden ? 'opacity-50' : ''}`}
                                 >
-                                  <div className="flex items-center gap-4">
+                                  <div className="flex items-center gap-3">
+                                    {(chartType === 'line' || chartType === 'bar') && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          const newHidden = new Set(hiddenChartCategories);
+                                          if (newHidden.has(item.id)) {
+                                            newHidden.delete(item.id);
+                                          } else {
+                                            newHidden.add(item.id);
+                                          }
+                                          setHiddenChartCategories(newHidden);
+                                        }}
+                                        className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors mr-0.5"
+                                        title={isHidden ? "顯示於圖表" : "隱藏於圖表"}
+                                      >
+                                        {isHidden ? <EyeOff size={14} /> : <Eye size={14} />}
+                                      </button>
+                                    )}
                                     <div
-                                      className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shadow-inner"
+                                      className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shadow-inner flex-shrink-0"
                                       style={{ backgroundColor: `${CHART_COLORS[idx % CHART_COLORS.length]}20` }}
                                     >
                                       {getCategoryEmoji(item.id, customCategories)}
@@ -1969,8 +1985,9 @@ export default function App() {
                                       </div>
                                     </div>
                                   </div>
-                                  <div className="text-right">
+                                  <div className="text-right flex items-center gap-2">
                                     <p className="text-sm font-mono font-bold text-slate-800">{item.value.toLocaleString()}</p>
+                                    <span className="text-[10px] text-slate-300 font-bold select-none">❯</span>
                                   </div>
                                 </div>
                               );
@@ -3259,6 +3276,138 @@ export default function App() {
                   );
                 })()}
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Category Detail Modal */}
+      <AnimatePresence>
+        {selectedStatsCategory && (
+          <div className="fixed inset-0 z-[60] flex items-end justify-center">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedStatsCategory(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="relative w-full max-w-md bg-white rounded-t-[2.5rem] p-6 pb-8 shadow-2xl overflow-hidden max-h-[85vh] flex flex-col z-10"
+            >
+              {/* Drag handle / Indicator */}
+              <div className="w-12 h-1.5 bg-slate-100 rounded-full mx-auto mb-5" />
+
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-inner"
+                    style={{ backgroundColor: `${selectedStatsCategory.type === 'expense' ? '#ef4444' : '#10b981'}15` }}
+                  >
+                    {selectedStatsCategory.emoji}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800">{selectedStatsCategory.name}</h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      {statsTimeframe === 'month' ? `${viewMonth.split('-')[1]}月份` : `${viewMonth.split('-')[0]}年度`}明細
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedStatsCategory(null)}
+                  className="w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Summary / Total Card */}
+              {(() => {
+                const [y, m] = viewMonth.split('-').map(Number);
+                const timeframeTransactions = transactions.filter(t => {
+                  const tDate = getSafeDate(t.timestamp);
+                  return statsTimeframe === "month"
+                    ? (tDate.getMonth() + 1 === m && tDate.getFullYear() === y)
+                    : tDate.getFullYear() === y;
+                });
+                const catTx = timeframeTransactions
+                  .filter(t => t.category === selectedStatsCategory.id && t.type === selectedStatsCategory.type)
+                  .sort((a, b) => getSafeDate(b.timestamp).getTime() - getSafeDate(a.timestamp).getTime());
+                const total = catTx.reduce((sum, t) => sum + t.amount, 0);
+
+                return (
+                  <>
+                    <div className="bg-slate-50 rounded-2xl p-4 mb-4 flex justify-between items-center border border-slate-100">
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">累計金額</span>
+                        <p className="text-2xl font-mono font-bold text-slate-800">
+                          {total.toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">交易筆數</span>
+                        <p className="text-lg font-mono font-bold text-slate-700">{catTx.length} 筆</p>
+                      </div>
+                    </div>
+
+                    {/* Transactions list */}
+                    <div className="flex-1 overflow-y-auto space-y-2 pr-1 min-h-0">
+                      {catTx.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-slate-300">
+                          <p className="text-xs font-bold">尚無相關紀錄</p>
+                        </div>
+                      ) : (
+                        catTx.map(t => {
+                          const dateObj = getSafeDate(t.timestamp);
+                          const dateStr = `${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getDate().toString().padStart(2, '0')}`;
+                          return (
+                            <div
+                              key={t.id}
+                              onClick={() => {
+                                setEditingTransaction(t);
+                                setSelectedStatsCategory(null);
+                              }}
+                              className="flex items-center justify-between p-3 bg-slate-50/50 hover:bg-slate-50 active:scale-[0.99] rounded-2xl border border-slate-100/50 transition-all cursor-pointer"
+                            >
+                              <div className="flex items-center gap-3 overflow-hidden">
+                                <span className="text-[10px] font-mono font-bold text-slate-400 w-10 flex-shrink-0">
+                                  {dateStr}
+                                </span>
+                                <div className="flex flex-col min-w-0">
+                                  {t.accountId && (() => {
+                                    const acc = accounts.find(a => a.id === t.accountId);
+                                    return (
+                                      <span
+                                        className="text-[7px] w-max px-1 rounded text-white font-bold mb-0.5"
+                                        style={{ backgroundColor: acc?.color || '#94a3b8' }}
+                                      >
+                                        {acc?.name || "未知"}
+                                      </span>
+                                    );
+                                  })()}
+                                  <span className="text-xs font-semibold text-slate-700 truncate">
+                                    {t.note}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <span className={`text-xs font-mono font-bold ${t.type === "income" ? "text-emerald-500" : "text-slate-800"}`}>
+                                  {t.type === "income" ? "" : "-"}{t.amount.toLocaleString()}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
             </motion.div>
           </div>
         )}
