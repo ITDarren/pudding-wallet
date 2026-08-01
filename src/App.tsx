@@ -2961,6 +2961,15 @@ export default function App() {
                     {editingTransaction.type === "income" ? "💰 收入" : "💸 支出"}
                   </button>
                   <button
+                    onClick={() => {
+                      setShowDeleteTransactionConfirm(editingTransaction);
+                      setEditingTransaction(null);
+                    }}
+                    className="flex-[0.5] bg-red-500 text-white font-bold rounded-2xl py-2.5 px-4 shadow-lg shadow-red-200 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <span>刪除</span>
+                  </button>
+                  <button
                     onClick={() => handleUpdateTransaction(editingTransaction)}
                     className="flex-[2] bg-app-primary text-app-accent font-bold rounded-2xl py-2.5 px-4 shadow-lg shadow-app-primary/40 active:scale-95 transition-all"
                   >
