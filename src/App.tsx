@@ -1559,7 +1559,7 @@ export default function App() {
                           </div>
                           <div className="bg-white rounded-3xl border border-slate-100 divide-y divide-slate-50 overflow-hidden shadow-sm">
                             {items.map(t => (
-                              <div key={t.id} className="flex items-center justify-between py-2.5 px-4 active:bg-slate-50 transition-colors">
+                              <div key={t.id} className="flex items-center justify-between py-2.5 px-4 cursor-pointer active:bg-slate-50 hover:bg-slate-50/70 transition-colors" onClick={() => setEditingTransaction(t)}>
                                 <div className="flex items-center gap-4">
                                   <div className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-lg">
                                     {getCategoryEmoji(t.category, customCategories)}
@@ -1592,14 +1592,9 @@ export default function App() {
                                   <span className={`font-mono font-bold ${t.type === "income" ? "text-emerald-500" : "text-slate-800"}`}>
                                     {t.type === "income" ? "" : "-"}{t.amount.toLocaleString()}
                                   </span>
-                                  <div className="flex items-center gap-1">
-                                    <button onClick={() => setEditingTransaction(t)} className="p-1.5 text-slate-400 hover:text-blue-500 transition-colors">
-                                      <Pencil size={14} />
-                                    </button>
-                                    <button onClick={() => setShowDeleteTransactionConfirm(t)} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
-                                      <Trash2 size={14} />
-                                    </button>
-                                  </div>
+                                  <button onClick={(e) => { e.stopPropagation(); setShowDeleteTransactionConfirm(t); }} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
+                                    <Trash2 size={14} />
+                                  </button>
                                 </div>
                               </div>
                             ))}
@@ -2299,17 +2294,9 @@ export default function App() {
                                 const filteredCats = customCategories.filter(c => c.type === catManageType);
                                 return filteredCats.map((cat, index) => (
                                   <div key={cat.id} className="flex flex-col gap-1 p-1.5 px-2 bg-slate-50 rounded-xl border border-slate-100/80 hover:bg-slate-100/50 hover:shadow-xs transition-all duration-200">
-                                    <div
-                                      onClick={() => {
-                                        setNewCatName(cat.name);
-                                        setNewCatEmoji(cat.emoji);
-                                        setEditingCategory(cat);
-                                      }}
-                                      className="flex items-center gap-1.5 overflow-hidden cursor-pointer hover:opacity-85 active:scale-95 transition-all w-full"
-                                      title="修改分類名稱"
-                                    >
+                                    <div className="flex items-center gap-1.5 overflow-hidden w-full">
                                       <span className="text-base flex-shrink-0">{cat.emoji}</span>
-                                      <span className="text-xs font-semibold text-slate-700 truncate hover:text-blue-500 transition-colors">{cat.name}</span>
+                                      <span className="text-xs font-semibold text-slate-700 truncate flex-1">{cat.name}</span>
                                     </div>
                                     <div className="flex items-center justify-end gap-1 w-full mt-0.5">
                                       <button
@@ -2317,6 +2304,17 @@ export default function App() {
                                         className={`p-1 rounded-md transition-colors hover:bg-slate-200/50 ${profile?.hiddenCategoryIds?.includes(cat.id!) ? 'text-blue-500' : 'text-slate-400 hover:text-blue-500'}`}
                                       >
                                         {profile?.hiddenCategoryIds?.includes(cat.id!) ? <EyeOff size={13} /> : <Eye size={13} />}
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          setNewCatName(cat.name);
+                                          setNewCatEmoji(cat.emoji);
+                                          setEditingCategory(cat);
+                                        }}
+                                        className="p-1 rounded-md text-slate-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                                        title="修改分類"
+                                      >
+                                        <Pencil size={13} />
                                       </button>
                                       <button
                                         onClick={() => {
