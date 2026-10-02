@@ -3119,11 +3119,8 @@ export default function App() {
                               key={index}
                               onMouseDown={(e) => {
                                 e.preventDefault();
-                                setSearchKeyword(note);
-                                setIsSearchFocused(false);
                               }}
-                              onTouchStart={(e) => {
-                                e.preventDefault();
+                              onClick={() => {
                                 setSearchKeyword(note);
                                 setIsSearchFocused(false);
                               }}
@@ -4003,11 +4000,8 @@ export default function App() {
                                 key={index}
                                 onMouseDown={(e) => {
                                   e.preventDefault();
-                                  setAccSearchKeyword(note);
-                                  setAccIsSearchFocused(false);
                                 }}
-                                onTouchStart={(e) => {
-                                  e.preventDefault();
+                                onClick={() => {
                                   setAccSearchKeyword(note);
                                   setAccIsSearchFocused(false);
                                 }}
