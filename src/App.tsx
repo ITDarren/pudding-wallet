@@ -949,8 +949,15 @@ export default function App() {
     }
   };
 
+  const formatAmountExpression = (expr: string) =>
+    expr.split(/([+-])/).map(part =>
+      /^[0-9]+$/.test(part) ? part.replace(/\B(?=(\d{3})+(?!\d))/g, ",") : part
+    ).join("");
+
   const handleKeypadPress = (val: string) => {
-    if (val === "del") {
+    if (val === "C") {
+      setKeypadValue("");
+    } else if (val === "del") {
       setKeypadValue(prev => prev.slice(0, -1));
     } else if (val === "+" || val === "-") {
       // Prevent consecutive operators or starting with an operator
@@ -2728,7 +2735,7 @@ export default function App() {
                     aria-label={`金額 ${keypadValue || "0"}`}
                   >
                     <span className="inline-block w-max min-w-full text-right text-3xl font-mono font-bold text-slate-800">
-                      {keypadValue || "0"}
+                      {keypadValue ? formatAmountExpression(keypadValue) : "0"}
                     </span>
                   </div>
                 </div>
@@ -2791,7 +2798,7 @@ export default function App() {
                 {["1", "2", "3", "-"].map(key => (
                   <button key={key} onClick={() => handleKeypadPress(key)} className="keypad-button">{key}</button>
                 ))}
-                {["0", "00", "del", "done"].map(key => (
+                {["0", "C", "del", "done"].map(key => (
                   <button
                     key={key}
                     onClick={() => key === "done" ? handleEquals() : handleKeypadPress(key)}
@@ -2812,7 +2819,7 @@ export default function App() {
                   onMouseDown={(event) => {
                     if (event.target === event.currentTarget) setIsRecentNotesOpen(false);
                   }}
-                  className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-900/40 p-4 backdrop-blur-sm sm:items-center"
+                  className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
                 >
                   <motion.section
                     initial={{ y: 24, opacity: 0, scale: 0.98 }}
