@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Calendar, ChevronLeft, ChevronRight, X } from "lucide-react";
 
@@ -44,6 +44,8 @@ export default function DatePicker({ value, onChange, className, children }: Dat
     return new Date(date.getFullYear(), date.getMonth(), 1);
   });
   const [draftParts, setDraftParts] = useState(() => getDateParts(parseISODate(value)));
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const suppressDateClick = useRef(false);
   const draftDate = dateFromParts(draftParts);
   const today = new Date();
   const firstDay = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1).getDay();
@@ -208,7 +210,33 @@ export default function DatePicker({ value, onChange, className, children }: Dat
               {['日', '一', '二', '三', '四', '五', '六'].map(day => <span key={day}>{day}</span>)}
             </div>
 
-            <div className="grid grid-cols-7 gap-y-1 text-center">
+            <div
+              className="touch-pan-y grid grid-cols-7 gap-y-1 text-center"
+              onTouchStart={(event) => {
+                const touch = event.touches[0];
+                touchStart.current = { x: touch.clientX, y: touch.clientY };
+              }}
+              onTouchEnd={(event) => {
+                if (!touchStart.current) return;
+                const touch = event.changedTouches[0];
+                const deltaX = touch.clientX - touchStart.current.x;
+                const deltaY = touch.clientY - touchStart.current.y;
+                touchStart.current = null;
+
+                if (Math.abs(deltaX) < 50 || Math.abs(deltaX) <= Math.abs(deltaY) * 1.2) return;
+                event.preventDefault();
+                suppressDateClick.current = true;
+                window.setTimeout(() => { suppressDateClick.current = false; }, 500);
+                changeMonth(deltaX < 0 ? 1 : -1);
+              }}
+              onTouchCancel={() => { touchStart.current = null; }}
+              onClickCapture={(event) => {
+                if (!suppressDateClick.current) return;
+                suppressDateClick.current = false;
+                event.preventDefault();
+                event.stopPropagation();
+              }}
+            >
               {calendarDays.map(({ date, inMonth }, index) => {
                 const isoDate = toISODate(date);
                 const isSelected = draftDate !== null && isoDate === toISODate(draftDate);
