@@ -3174,17 +3174,17 @@ export default function App() {
               )}
 
               {/* Date Pickers - Single Row, No Labels */}
-              <div className="mb-5 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-2 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="mb-5 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-3 py-2 bg-slate-50 rounded-2xl border border-slate-100">
                 <DatePicker
                   value={searchStartDate}
                   onChange={setSearchStartDate}
-                  className="min-w-0 w-full bg-transparent text-[11px] font-bold text-slate-600 outline-none text-center"
+                  className="inline-flex min-w-0 w-full items-center justify-center gap-1.5 whitespace-nowrap bg-transparent text-[11px] font-bold text-slate-600 outline-none"
                 />
                 <div className="w-px h-3 bg-slate-200" />
                 <DatePicker
                   value={searchEndDate}
                   onChange={setSearchEndDate}
-                  className="min-w-0 w-full bg-transparent text-[11px] font-bold text-slate-600 outline-none text-center"
+                  className="inline-flex min-w-0 w-full items-center justify-center gap-1.5 whitespace-nowrap bg-transparent text-[11px] font-bold text-slate-600 outline-none"
                 />
               </div>
 
@@ -4054,17 +4054,17 @@ export default function App() {
                   )}
 
                   {/* Date Pickers - Single Row, No Labels */}
-                  <div className="mt-2.5 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="mt-2.5 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-2xl border border-slate-100">
                     <DatePicker
                       value={accSearchStartDate}
                       onChange={setAccSearchStartDate}
-                      className="min-w-0 w-full bg-transparent text-[10px] font-bold text-slate-600 outline-none text-center"
+                      className="inline-flex min-w-0 w-full items-center justify-center gap-1 whitespace-nowrap bg-transparent text-[10px] font-bold text-slate-600 outline-none"
                     />
                     <div className="w-px h-3 bg-slate-200" />
                     <DatePicker
                       value={accSearchEndDate}
                       onChange={setAccSearchEndDate}
-                      className="min-w-0 w-full bg-transparent text-[10px] font-bold text-slate-600 outline-none text-center"
+                      className="inline-flex min-w-0 w-full items-center justify-center gap-1 whitespace-nowrap bg-transparent text-[10px] font-bold text-slate-600 outline-none"
                     />
                   </div>
 
