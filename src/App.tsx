@@ -71,6 +71,7 @@ import {
 } from "recharts";
 
 import { db, auth, loginWithGoogle } from "./lib/firebase";
+import DatePicker from "./components/DatePicker";
 import {
   Transaction,
   UserProfile,
@@ -2751,9 +2752,11 @@ export default function App() {
               <div className="grid grid-cols-4 border-t border-slate-50">
                 {["7", "8", "9", "today"].map(key => (
                   key === "today" ? (
-                    <div
+                    <DatePicker
                       key={key}
-                      className="keypad-button flex items-center justify-center gap-1.5 cursor-pointer active:bg-slate-50 transition-colors relative"
+                      value={selectedDate}
+                      onChange={setSelectedDate}
+                      className="keypad-button flex items-center justify-center gap-1.5 cursor-pointer active:bg-slate-50 transition-colors"
                     >
                       <Calendar size={18} className="text-app-primary" />
                       <span className="text-xs font-bold text-slate-600">
@@ -2764,16 +2767,7 @@ export default function App() {
                           return `${parts[1]}/${parts[2]}`;
                         })()}
                       </span>
-                      <input
-                        type="date"
-                        value={selectedDate}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setSelectedDate(val || getLocalISODate());
-                        }}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                      />
-                    </div>
+                    </DatePicker>
                   ) : (
                     <button
                       key={key}
@@ -2900,7 +2894,22 @@ export default function App() {
 
                 <div>
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">日期</label>
-                  <div className="relative w-full bg-slate-50 border border-slate-100 rounded-2xl p-3 flex items-center justify-between overflow-hidden">
+                  <DatePicker
+                    value={(() => {
+                      const d = getSafeDate(editingTransaction.timestamp);
+                      const y = d.getFullYear();
+                      const m = String(d.getMonth() + 1).padStart(2, '0');
+                      const day = String(d.getDate()).padStart(2, '0');
+                      return `${y}-${m}-${day}`;
+                    })()}
+                    onChange={(val) => {
+                      const [y, m, d] = val.split('-').map(Number);
+                      const oldDate = getSafeDate(editingTransaction.timestamp);
+                      const newDate = new Date(y, m - 1, d, oldDate.getHours(), oldDate.getMinutes(), oldDate.getSeconds(), oldDate.getMilliseconds());
+                      setEditingTransaction({ ...editingTransaction, timestamp: Timestamp.fromDate(newDate) });
+                    }}
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-3 flex items-center justify-between text-left transition-colors hover:bg-slate-100"
+                  >
                     <span className="text-sm font-bold text-slate-600">
                       {(() => {
                         const d = getSafeDate(editingTransaction.timestamp);
@@ -2911,26 +2920,7 @@ export default function App() {
                       })()}
                     </span>
                     <Calendar size={20} className="text-app-primary" />
-                    <input
-                      type="date"
-                      value={(() => {
-                        const d = getSafeDate(editingTransaction.timestamp);
-                        const y = d.getFullYear();
-                        const m = String(d.getMonth() + 1).padStart(2, '0');
-                        const day = String(d.getDate()).padStart(2, '0');
-                        return `${y}-${m}-${day}`;
-                      })()}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (!val) return;
-                        const [y, m, d] = val.split('-').map(Number);
-                        const oldDate = getSafeDate(editingTransaction.timestamp);
-                        const newDate = new Date(y, m - 1, d, oldDate.getHours(), oldDate.getMinutes(), oldDate.getSeconds(), oldDate.getMilliseconds());
-                        setEditingTransaction({ ...editingTransaction, timestamp: Timestamp.fromDate(newDate) });
-                      }}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                  </div>
+                  </DatePicker>
                 </div>
 
                 <div>
@@ -3188,18 +3178,16 @@ export default function App() {
 
               {/* Date Pickers - Single Row, No Labels */}
               <div className="mb-5 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-2 bg-slate-50 rounded-2xl border border-slate-100">
-                <input
-                  type="date"
+                <DatePicker
                   value={searchStartDate}
-                  onChange={(e) => setSearchStartDate(e.target.value)}
-                  className="bg-transparent text-[11px] font-bold text-slate-600 outline-none w-full text-center"
+                  onChange={setSearchStartDate}
+                  className="min-w-0 w-full bg-transparent text-[11px] font-bold text-slate-600 outline-none text-center"
                 />
                 <div className="w-px h-3 bg-slate-200" />
-                <input
-                  type="date"
+                <DatePicker
                   value={searchEndDate}
-                  onChange={(e) => setSearchEndDate(e.target.value)}
-                  className="bg-transparent text-[11px] font-bold text-slate-600 outline-none w-full text-center"
+                  onChange={setSearchEndDate}
+                  className="min-w-0 w-full bg-transparent text-[11px] font-bold text-slate-600 outline-none text-center"
                 />
               </div>
 
@@ -4073,18 +4061,16 @@ export default function App() {
 
                   {/* Date Pickers - Single Row, No Labels */}
                   <div className="mt-2.5 grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-2xl border border-slate-100">
-                    <input
-                      type="date"
+                    <DatePicker
                       value={accSearchStartDate}
-                      onChange={(e) => setAccSearchStartDate(e.target.value)}
-                      className="bg-transparent text-[10px] font-bold text-slate-600 outline-none w-full text-center"
+                      onChange={setAccSearchStartDate}
+                      className="min-w-0 w-full bg-transparent text-[10px] font-bold text-slate-600 outline-none text-center"
                     />
                     <div className="w-px h-3 bg-slate-200" />
-                    <input
-                      type="date"
+                    <DatePicker
                       value={accSearchEndDate}
-                      onChange={(e) => setAccSearchEndDate(e.target.value)}
-                      className="bg-transparent text-[10px] font-bold text-slate-600 outline-none w-full text-center"
+                      onChange={setAccSearchEndDate}
+                      className="min-w-0 w-full bg-transparent text-[10px] font-bold text-slate-600 outline-none text-center"
                     />
                   </div>
 
