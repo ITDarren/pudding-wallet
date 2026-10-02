@@ -221,25 +221,22 @@ export default function App() {
   };
 
   const recentPhrases = useMemo(() => {
-    const oneYearAgo = new Date();
-    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    const threeYearsAgo = new Date();
+    threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
 
-    // Filter transactions from last year with non-empty notes
-    const pastYearTransactions = transactions
-      .filter(t => t.note && t.note.trim() !== "" && getSafeDate(t.timestamp) >= oneYearAgo)
+    const pastThreeYearTransactions = transactions
+      .filter(t => t.note && t.note.trim() !== "" && getSafeDate(t.timestamp) >= threeYearsAgo)
       .sort((a, b) => getSafeDate(b.timestamp).getTime() - getSafeDate(a.timestamp).getTime());
 
-    // Get unique notes in order of recency
     const uniqueNotes = new Set<string>();
     const phrases: string[] = [];
 
-    for (const t of pastYearTransactions) {
+    for (const t of pastThreeYearTransactions) {
       const note = t.note!.trim();
       if (!uniqueNotes.has(note)) {
         uniqueNotes.add(note);
         phrases.push(note);
       }
-      if (phrases.length >= 15) break; // Limit to top 15 for UI clarity
     }
 
     return phrases;
@@ -323,6 +320,7 @@ export default function App() {
 
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [isRecentNotesOpen, setIsRecentNotesOpen] = useState(false);
   const [keypadValue, setKeypadValue] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Food");
   const [transactionType, setTransactionType] = useState<TransactionType>("expense");
@@ -351,6 +349,12 @@ export default function App() {
   const [catHasTransactionsNotice, setCatHasTransactionsNotice] = useState<boolean>(false);
   const dateInputRef = useRef<HTMLInputElement>(null);
   const viewMonthRef = useRef<HTMLInputElement>(null);
+  const amountDisplayRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const amountDisplay = amountDisplayRef.current;
+    if (amountDisplay) amountDisplay.scrollLeft = amountDisplay.scrollWidth;
+  }, [keypadValue]);
 
   const [catManageType, setCatManageType] = useState<"expense" | "income">("expense");
   const [showCashTransfer, setShowCashTransfer] = useState<{ type: 'withdraw' | 'deposit', account: BankAccount } | null>(null);
@@ -954,9 +958,9 @@ export default function App() {
         setKeypadValue(prev => prev + val);
       }
     } else if (val === "00") {
-      if (keypadValue.length < 9) setKeypadValue(prev => prev + "00");
+      setKeypadValue(prev => prev + "00");
     } else {
-      if (keypadValue.length < 10) setKeypadValue(prev => prev + val);
+      setKeypadValue(prev => prev + val);
     }
   };
 
@@ -976,6 +980,7 @@ export default function App() {
   const resetEntry = () => {
     setKeypadValue("");
     setNoteValue("");
+    setIsRecentNotesOpen(false);
     setIsAdding(false);
     setSelectedToAccountId(null);
     setSelectedFromAccountId(null);
@@ -2712,42 +2717,44 @@ export default function App() {
 
 
 
-              <div className="px-6 py-4 flex items-center justify-between">
-                {transactionType !== "transfer" ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-400 uppercase">備註:</span>
+              <div className="px-6 py-3 flex flex-col gap-2.5">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className={`shrink-0 text-xs font-bold uppercase tracking-widest ${transactionType === "transfer" ? "text-slate-300" : "text-slate-400"}`}>
+                    金額
+                  </span>
+                  <div
+                    ref={amountDisplayRef}
+                    className="min-w-0 max-w-full flex-1 touch-pan-x overscroll-x-contain overflow-x-auto overflow-y-hidden whitespace-nowrap text-right no-scrollbar"
+                    aria-label={`金額 ${keypadValue || "0"}`}
+                  >
+                    <span className="inline-block w-max min-w-full text-right text-3xl font-mono font-bold text-slate-800">
+                      {keypadValue || "0"}
+                    </span>
+                  </div>
+                </div>
+                {transactionType !== "transfer" && (
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="shrink-0 text-xs font-bold text-slate-400 uppercase">備註</span>
                     <input
                       type="search"
                       value={noteValue}
                       onChange={(e) => setNoteValue(e.target.value)}
-                      placeholder="點擊輸入備註..."
-                      className="bg-transparent text-sm focus:outline-none"
+                      placeholder="輸入備註..."
+                      className="min-w-0 flex-1 bg-transparent text-sm focus:outline-none"
                     />
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">轉帳金額</span>
+                    {recentPhrases.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setIsRecentNotesOpen(true)}
+                        className="shrink-0 flex items-center gap-1.5 rounded-xl border border-slate-100 bg-slate-50 px-2.5 py-2 text-[10px] font-bold text-slate-500 transition-colors hover:bg-slate-100"
+                      >
+                        <Clock size={13} />
+                        常用備註
+                      </button>
+                    )}
                   </div>
                 )}
-                <span className="text-3xl font-mono font-bold text-slate-800">
-                  {keypadValue || "0"}
-                </span>
               </div>
-
-              {/* 常用片語 (動態提取) */}
-              {recentPhrases.length > 0 && transactionType !== "transfer" && (
-                <div className="px-6 pb-3 overflow-x-auto no-scrollbar flex gap-2">
-                  {recentPhrases.map(phrase => (
-                    <button
-                      key={phrase}
-                      onClick={() => setNoteValue(prev => prev ? `${prev} ${phrase}` : phrase)}
-                      className="flex-shrink-0 px-2.5 py-1 bg-slate-50 text-[10px] font-bold text-slate-400 rounded-lg border border-slate-100 active:scale-95 transition-all"
-                    >
-                      {phrase}
-                    </button>
-                  ))}
-                </div>
-              )}
 
               <div className="grid grid-cols-4 border-t border-slate-50">
                 {["7", "8", "9", "today"].map(key => (
@@ -2795,6 +2802,61 @@ export default function App() {
                 ))}
               </div>
             </div>
+
+            <AnimatePresence>
+              {isRecentNotesOpen && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onMouseDown={(event) => {
+                    if (event.target === event.currentTarget) setIsRecentNotesOpen(false);
+                  }}
+                  className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-900/40 p-4 backdrop-blur-sm sm:items-center"
+                >
+                  <motion.section
+                    initial={{ y: 24, opacity: 0, scale: 0.98 }}
+                    animate={{ y: 0, opacity: 1, scale: 1 }}
+                    exit={{ y: 16, opacity: 0, scale: 0.98 }}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="常用備註"
+                    className="flex max-h-[75vh] w-full max-w-md flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-2xl shadow-slate-900/20"
+                  >
+                    <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                      <div>
+                        <h2 className="text-base font-bold text-slate-800">常用備註</h2>
+                        <p className="mt-0.5 text-[10px] font-medium text-slate-400">近三年 · {recentPhrases.length} 項不重複備註</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsRecentNotesOpen(false)}
+                        className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                        aria-label="關閉常用備註"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+                    <div className="overflow-y-auto overscroll-contain p-3">
+                      {recentPhrases.map(phrase => (
+                        <button
+                          key={phrase}
+                          type="button"
+                          onClick={() => {
+                            setNoteValue(prev => prev ? `${prev} ${phrase}` : phrase);
+                            setIsRecentNotesOpen(false);
+                          }}
+                          className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 active:bg-app-primary/10"
+                        >
+                          <Clock size={14} className="shrink-0 text-slate-300" />
+                          <span className="min-w-0 flex-1 break-words">{phrase}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </motion.section>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         )}
       </AnimatePresence>
